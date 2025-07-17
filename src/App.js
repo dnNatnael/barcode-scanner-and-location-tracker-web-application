@@ -1,21 +1,18 @@
 import React from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
-import Signup from "./components/Pages/Signup.js";
-import Login from "./components/Pages/Login.js";
-import FrontPage from "./components/Pages/FrontPage.js";
-import LocationTracker from "./components/AdminDashboard/LocationTracker.js";
-import Scanner from './components/DriverDashboard/Scanner.js';
-import UserTypeSelection from './components/Pages/UserTypeSelect';
-import IT from "./components/Pages/IT.js";
-import ItLoginSignup from "./components/Pages/ItLoginSignup.js";
-import ItLogin from "./components/Pages/ItLogin.js";
-import ItSignup from "./components/Pages/ItSignup.js";
-import Resignated from "./components/Pages/Resignated.js";
-import DriverSampleScan from "./components/Pages/DriverSampleScan.js";
-import { getDoc, doc, collection, addDoc, setDoc, serverTimestamp, runTransaction, query, orderBy, onSnapshot } from "firebase/firestore";
+import Signup from "./components/Pages/Signup";
+import Login from "./components/Pages/Login";
+import FrontPage from "./components/Pages/FrontPage";
+import LocationTracker from "./components/AdminDashboard/LocationTracker";
+import Scanner from "./components/DriverDashboard/Scanner";
+import UserTypeSelection from "./components/Pages/UserTypeSelect";
+import IT from "./components/Pages/IT";
+import ItLogin from "./components/Pages/ItLogin";
+import ItSignup from "./components/Pages/ItSignup";
+import Resignated from "./components/Pages/Resignated";
+import DriverSampleScan from "./components/Pages/DriverSampleScan";
 
 function App() {
-  const navigate = useNavigate();
   return (
     <div className="whole-pages">
       <Routes>
