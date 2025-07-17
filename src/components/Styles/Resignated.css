@@ -1,0 +1,68 @@
+/* Resignated.css - based on IT.css for consistent styling */
+.resignated-container {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 1.2rem;
+  background: #fff;
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+
+.resignated-container h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #1d3557;
+  font-size: 1.05rem;
+}
+
+.resignated-users-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #f8fafc;
+  border-radius: 1rem;
+  overflow: hidden;
+  font-size: 0.7rem;
+}
+
+.resignated-users-table th, .resignated-users-table td {
+  padding: 0.32rem;
+  text-align: left;
+  font-size: 0.7rem;
+}
+
+.resignated-users-table th {
+  background: #e0e7ef;
+  color: #22223b;
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+.resignated-users-table tr {
+  border-bottom: 1px solid #e0e7ef;
+}
+
+.resignated-users-table tr:last-child {
+  border-bottom: none;
+}
+
+.resignated-users-table tr.removed {
+  background: #f5f5f5;
+}
+
+.highlighted {
+  background: #ffe082 !important;
+  transition: background 0.5s;
+}
+
+@media (max-width: 700px) {
+  .resignated-container {
+    padding: 0.7rem;
+  }
+  .resignated-users-table th, .resignated-users-table td {
+    padding: 0.18rem;
+    font-size: 0.6rem;
+  }
+  .resignated-container h1 {
+    font-size: 0.8rem;
+  }
+}
