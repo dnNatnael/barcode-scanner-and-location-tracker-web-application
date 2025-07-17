@@ -1,0 +1,207 @@
+.it-container {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 1.2rem;
+  background: #fff;
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+
+.it-container h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #1d3557;
+  font-size: 1.05rem;
+}
+
+.it-container h2 {
+  font-size: 0.8rem;
+}
+
+.it-users-table, .resignated-users-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #f8fafc;
+  border-radius: 1rem;
+  overflow: hidden;
+  font-size: 0.7rem;
+  table-layout: fixed;
+}
+
+.it-users-table th, .it-users-table td,
+.resignated-users-table th, .resignated-users-table td {
+  padding: 0.32rem 0.5rem;
+  text-align: left;
+  font-size: 0.7rem;
+  vertical-align: middle;
+  height: 2.2rem;
+}
+
+.it-users-table th, .resignated-users-table th {
+  background: #e0e7ef;
+  color: #22223b;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-align: left;
+}
+
+.it-users-table th:nth-child(1), .resignated-users-table th:nth-child(1),
+.it-users-table td:nth-child(1), .resignated-users-table td:nth-child(1) {
+  width: 13%;
+}
+.it-users-table th:nth-child(2), .resignated-users-table th:nth-child(2),
+.it-users-table td:nth-child(2), .resignated-users-table td:nth-child(2) {
+  width: 17%;
+}
+.it-users-table th:nth-child(3), .resignated-users-table th:nth-child(3),
+.it-users-table td:nth-child(3), .resignated-users-table td:nth-child(3) {
+  width: 22%;
+}
+.it-users-table th:nth-child(4), .resignated-users-table th:nth-child(4),
+.it-users-table td:nth-child(4), .resignated-users-table td:nth-child(4) {
+  width: 10%;
+}
+.it-users-table th:nth-child(5), .resignated-users-table th:nth-child(5),
+.it-users-table td:nth-child(5), .resignated-users-table td:nth-child(5) {
+  width: 13%;
+}
+.it-users-table th:nth-child(6), .resignated-users-table th:nth-child(6),
+.it-users-table td:nth-child(6), .resignated-users-table td:nth-child(6) {
+  width: 15%;
+}
+.it-users-table th:nth-child(7), .resignated-users-table th:nth-child(7),
+.it-users-table td:nth-child(7), .resignated-users-table td:nth-child(7) {
+  width: 10%;
+}
+
+.it-users-table tr, .resignated-users-table tr {
+  border-bottom: 1px solid #e0e7ef;
+}
+
+.it-users-table tr:last-child, .resignated-users-table tr:last-child {
+  border-bottom: none;
+}
+
+.it-users-table tr.approved, .resignated-users-table tr.approved {
+  background: #e6ffe6;
+}
+.it-users-table tr.rejected, .resignated-users-table tr.rejected {
+  background: #ffe6e6;
+}
+.it-users-table tr.pending, .resignated-users-table tr.pending {
+  background: #fffbe6;
+}
+
+.approve-btn, .reject-btn, .remove-btn {
+  border: none;
+  border-radius: 1.5rem;
+  padding: 0.18rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-right: 0.2rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.approve-btn {
+  background: #1d72fa;
+  color: #fff;
+}
+.approve-btn:disabled {
+  background: #b3d1ff;
+  color: #fff;
+  cursor: not-allowed;
+}
+
+.reject-btn {
+  background: #fa1d1d;
+  color: #fff;
+}
+.reject-btn:disabled {
+  background: #ffb3b3;
+  color: #fff;
+  cursor: not-allowed;
+}
+
+.remove-btn {
+  background: #888;
+  color: #fff;
+  margin-left: 0.3rem;
+}
+.remove-btn:hover {
+  background: #333;
+}
+
+select {
+  border-radius: 1rem;
+  padding: 0.12rem 0.35rem;
+  border: 1px solid #e0e7ef;
+  font-size: 0.7rem;
+  background: #fff;
+}
+
+select.role-select {
+  border-radius: 9999px !important;
+  padding: 0.18rem 0.8rem !important;
+  font-size: 0.58rem !important;
+  font-weight: 500;
+  border: 1px solid #bfc9d9;
+  background: #f8fafc;
+  height: 1.7rem;
+  outline: none;
+  transition: border 0.2s;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  box-shadow: none;
+}
+
+select.role-select:focus {
+  border: 1.5px solid #1d72fa;
+  background: #eaf2fb;
+}
+
+select.role-select option {
+  border-radius: 9999px;
+  padding: 0.3rem 1.2rem;
+  font-size: 0.65rem;
+  background: #fff;
+  color: #22223b;
+  margin: 0.1rem 0;
+}
+
+.it-users-table tbody tr {
+  border-bottom: 1px solid #e0e7ef;
+  margin-bottom: 6px;
+  display: table-row;
+}
+
+.it-users-table tbody tr:not(:last-child) {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+}
+
+.it-users-table tbody {
+  border-spacing: 0 6px;
+  display: table-row-group;
+}
+
+@media (max-width: 700px) {
+  .it-container {
+    padding: 0.7rem;
+  }
+  .it-users-table th, .it-users-table td,
+  .resignated-users-table th, .resignated-users-table td {
+    padding: 0.18rem 0.2rem;
+    font-size: 0.6rem;
+    height: 1.5rem;
+  }
+  .it-container h1 {
+    font-size: 0.8rem;
+  }
+  .it-container h2 {
+    font-size: 0.7rem;
+  }
+  .approve-btn, .reject-btn, .remove-btn, select {
+    font-size: 0.6rem;
+  }
+}
