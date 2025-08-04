@@ -1,130 +1,474 @@
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  background: linear-gradient(135deg, #f8fafc 0%, #e0e7ef 100%);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.login-container {
+body {
   min-height: 100vh;
   min-width: 100vw;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+  background: #3D74B6;
+}
+
+/* Main container for auth pages - unified with image, form, text, and button */
+.main-auth-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: none;
+  min-height: 100vh;
+  width: 100vw;
+  gap: 2px;
+  background: #3D74B6;
+  position: relative;
 }
 
-.login-form {
-    width: 100%;
-    padding-top: 20px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+.left-bg {
+  width: auto;
+  height: auto;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.login-button {
-    padding: 0.5rem 0;
-    width: 100%;
-    background: #1c6954;
-    border: none;
-    border-radius: 0.5rem;
-    color: #fff;
-    font-size: 1rem;
-    cursor: pointer;
-    margin-top: 10px;
-    transition: background 0.2s, color 0.2s;
+.left-bg::before {
+  content: '';
+  display: block;
+  width: 320px;
+  height: 160px;
+  margin: 0;
+  background: url('../asssets/icl-logo-form.png') no-repeat center center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  min-width: 80px;
+  min-height: 40px;
 }
 
-.login-button:hover {
-    background: #1a8c6d;
-    color: rgb(178, 172, 172);
+.right-form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  height: auto;
+  width: auto;
+  margin: 0;
 }
 
-.nav-switch {
-  margin-top: 1.5rem;
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 320px;
+  padding: 10px 20px;
+  border-radius: 20px;
+  position: relative;
+  background-color: rgba(26,26,26,0.5);
+  color: #fff;
+  border: 1px solid #333;
+  /* Center horizontally if not already */
+  margin: 0 auto;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.13), 0 1.5px 4px rgba(0,0,0,0.07);
+  align-items: flex-start;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -1px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding-left: 30px;
+  color: #00bfff;
+}
+
+.title::before {
+  width: 18px;
+  height: 18px;
+}
+
+.title::after {
+  width: 18px;
+  height: 18px;
+  animation: pulse 1s linear infinite;
+}
+
+.title::before,
+.title::after {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  left: 0px;
+  background-color: #00bfff;
+}
+
+.message, 
+.signin {
+  font-size: 14.5px;
+  color: rgba(255, 255, 255, 0.7);
   text-align: center;
-  font-size: 1rem;
-}
-
-.switch-btn {
-  margin-left: 0.5rem;
-  padding: 0.2rem 0.9rem;
-  font-size: 1rem;
-  background: #fff;
-  color: #22223b;
-  border: 1px solid #ccc;
-  border-radius: 0.4rem;
-  cursor: pointer;
-  transition: background 0.2s, border 0.2s;
-  font-weight: 500;
-}
-
-.switch-btn:hover {
-  background: #f0f0f0;
-  border-color: #888;
-}
-
-.login-form-container {
-  background: #fff;
-  border-radius: 1.2rem;
-  box-shadow: 0 4px 24px rgba(44, 62, 80, 0.13), 0 1.5px 4px rgba(44, 62, 80, 0.07);
-  padding: 2.5rem 2.5rem 2rem 2.5rem;
-  max-width: 400px;
   width: 100%;
-  margin: 2rem auto;
+}
+
+.title, .message {
+  text-align: left;
+  width: 100%;
+}
+
+.message {
+  text-align: left;
+  width: 100%;
+  padding-left: 30px;
+}
+
+.signin {
+  text-align: left;
+  width: 100%;
+}
+
+.signin a:hover {
+  text-decoration: underline royalblue;
+}
+
+.signin a {
+  color: #00bfff;
+}
+
+.flex {
+  display: flex;
+  width: 100%;
+  gap: 6px;
+}
+
+.form label {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.form label .input {
+  background-color: rgba(51,51,51,0.3);
+  color: #fff;
+  width: 100%;
+  padding: 12px 12px;
+  outline: 0;
+  border: 1px solid rgba(105, 105, 105, 0.397);
+  border-radius: 10px;
+  text-align: left;
+  max-width: 92.5%;
+  margin-right: auto;
+  margin-bottom: 5px;
+  font-size: 0.95rem;
+}
+
+.form label .input + span {
+  color: rgba(255, 255, 255, 0.5);
+  position: absolute;
+  left: 10px;
+  top: 0px;
+  font-size: 0.9em;
+  cursor: text;
+  transition: 0.3s ease;
+}
+
+.form label .input:placeholder-shown + span {
+  top: 12.5px;
+  font-size: 0.9em;
+}
+
+.form label .input:focus + span,
+.form label .input:valid + span {
+  color: #00bfff;
+  top: 0px;
+  font-size: 0.7em;
+  font-weight: 600;
+}
+
+/* Password field container for eye icon */
+.password-field-container {
+  position: relative;
+  width: 100%;
+}
+
+.password-field-container .input {
+  padding-right: 40px;
+}
+
+/* Eye icon styling */
+.password-toggle-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.2s ease;
+  z-index: 10;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-toggle-icon:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.password-toggle-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.input {
+  font-size: 0.95rem;
+}
+
+.submit {
+  border: none;
+  outline: none;
+  padding: 10px;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 16px;
+  transform: .3s ease;
+  background-color: #00bfff;
+  width: 100%;
+  max-width: 100%;
+  margin-right: auto;
+  margin-top: 5px;
+  cursor: pointer;
+}
+
+.submit:hover {
+  background-color: #00bfff96;
+}
+
+.submit:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease-in-out;
+}
+
+@keyframes pulse {
+  from {
+    transform: scale(0.9);
+    opacity: 1;
+  }
+
+  to {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+.auth-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100vw;
+  overflow-x: hidden;
+  position: relative;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Authorized users text positioned within main container */
+.auth-text {
+  position: absolute;
+  left: 105px;
+  bottom: 80px;
+  color: #fff;
+  font-weight: 600;
+  padding: 6px 18px;
+  border-radius: 8px;
+  z-index: 11;
+  font-size: 16px;
+  margin: 0;
+}
+
+/* IT Button positioned within main container - under the text */
+.it-btn {
+  position: absolute;
+  left: 120px;
+  bottom: 32px;
+  width: 90px;
+  max-width: 100%;
+  z-index: 10;
+}
+
+/* Container for auth text and IT button - ensures they stay together */
+.auth-access-container {
+  position: static;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 8px;
+  z-index: 20;
 }
 
-.login-form-container h1 {
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-  color: #1c6954;
-  font-weight: 700;
-  letter-spacing: 0.5px;
+.auth-access-container .auth-text {
+  position: static;
+  margin: 0;
+  left: unset;
+  bottom: unset;
 }
 
-.login-form-container .login-form {
-  width: 100%;
-  gap: 1.2rem;
+.auth-access-container .it-btn {
+  position: static;
+  left: unset;
+  bottom: unset;
 }
 
-.login-form-container input {
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  padding: 0.7rem 1rem;
-  font-size: 1rem;
-  margin-bottom: 0.5rem;
-  width: 100%;
+/* New IT Button Styles */
+.button {
+  position: relative;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
+  padding-block: 0.5rem;
+  padding-inline: 1.25rem;
+  background-color: rgb(0 107 179);
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffff;
+  gap: 10px;
+  font-weight: bold;
+  border: 3px solid #ffffff4d;
   outline: none;
-  transition: border 0.2s;
+  overflow: hidden;
+  font-size: 15px;
+  cursor: pointer;
 }
 
-.login-form-container input:focus {
-  border: 1.5px solid #1c6954;
+.icon {
+  width: 24px;
+  height: 24px;
+  transition: all 0.3s ease-in-out;
 }
 
-.login-form-container .login-button {
-  margin-top: 0.5rem;
+.button:hover {
+  transform: scale(1.05);
+  border-color: #fff9;
 }
 
-.login-form-container .nav-switch {
-  margin-top: 1.5rem;
+.button:hover .icon {
+  transform: translate(4px);
 }
 
-@media (max-width: 500px) {
-    .login-container {
-        padding: 1rem;
-        max-width: 95vw;
-    }
-    .login-form-container {
-      padding: 1.2rem 0.5rem 1rem 0.5rem;
-      max-width: 98vw;
-    }
+.button:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease-in-out;
+}
+
+.button:hover::before {
+  animation: shine 1.5s ease-out infinite;
+}
+
+.button::before {
+  content: "";
+  position: absolute;
+  width: 100px;
+  height: 100%;
+  background-image: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0.8),
+    rgba(255, 255, 255, 0) 70%
+  );
+  top: 0;
+  left: -100px;
+  opacity: 0.6;
+}
+
+@keyframes shine {
+  0% {
+    left: -100px;
+  }
+
+  60% {
+    left: 100%;
+  }
+
+  to {
+    left: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  .main-auth-container {
+    gap: 2px;
+  }
+  .left-bg::before {
+    width: 260px;
+    height: 130px;
+  }
+  .auth-root {
+    min-height: 100vh;
+    width: 100vw;
+    overflow-x: hidden;
+    margin-left: 0;
+  }
+  .auth-access-container {
+    margin-top: 10px;
+  }
+}
+
+/* Ensure image is visible on very small screens */
+@media (max-width: 600px) {
+  .main-auth-container {
+    gap: 2px;
+  }
+  .left-bg::before {
+    width: 180px;
+    height: 90px;
+  }
+  .auth-access-container {
+    margin-top: 8px;
+  }
+}
+
+/* Ensure image is visible on extremely small screens */
+@media (max-width: 400px) {
+  .main-auth-container {
+    gap: 2px;
+  }
+  .left-bg::before {
+    width: 140px;
+    height: 70px;
+  }
+  .auth-access-container {
+    margin-top: 6px;
+  }
+}
+
+/* Success Message Styles */
+.success-message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #28a745;
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-weight: 600;
+  font-size: 0.9rem;
+  z-index: 10001;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
