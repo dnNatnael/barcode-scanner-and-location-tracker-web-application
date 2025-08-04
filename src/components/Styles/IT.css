@@ -23,7 +23,7 @@
   border-collapse: collapse;
   background: #f8fafc;
   border-radius: 1rem;
-  overflow: hidden;
+  overflow: visible;
   font-size: 0.7rem;
   table-layout: fixed;
 }
@@ -45,6 +45,12 @@
   text-align: left;
 }
 
+.it-users-table td, .resignated-users-table td {
+  text-align: left;
+  position: relative;
+  overflow: visible;
+}
+
 .it-users-table th:nth-child(1), .resignated-users-table th:nth-child(1),
 .it-users-table td:nth-child(1), .resignated-users-table td:nth-child(1) {
   width: 13%;
@@ -60,6 +66,8 @@
 .it-users-table th:nth-child(4), .resignated-users-table th:nth-child(4),
 .it-users-table td:nth-child(4), .resignated-users-table td:nth-child(4) {
   width: 10%;
+  overflow: visible;
+  position: relative;
 }
 .it-users-table th:nth-child(5), .resignated-users-table th:nth-child(5),
 .it-users-table td:nth-child(5), .resignated-users-table td:nth-child(5) {
@@ -72,6 +80,8 @@
 .it-users-table th:nth-child(7), .resignated-users-table th:nth-child(7),
 .it-users-table td:nth-child(7), .resignated-users-table td:nth-child(7) {
   width: 10%;
+  padding: 0.1rem 0.2rem !important;
+  margin: 0 !important;
 }
 
 .it-users-table tr, .resignated-users-table tr {
@@ -94,7 +104,7 @@
 
 .approve-btn, .reject-btn, .remove-btn {
   border: none;
-  border-radius: 1.5rem;
+  border-radius: 0.3rem;
   padding: 0.18rem 0.55rem;
   font-size: 0.7rem;
   font-weight: 600;
@@ -130,6 +140,69 @@
 }
 .remove-btn:hover {
   background: #333;
+}
+
+/* Animated Reject Button Styles */
+.noselect {
+  width: 150px;
+  height: 50px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  background: red;
+  border: none;
+  border-radius: 5px;
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.15);
+  background: #e62222;
+  position: relative;
+}
+
+.noselect, .noselect span {
+  transition: 200ms;
+}
+
+.noselect .text {
+  transform: translateX(35px);
+  color: white;
+  font-weight: bold;
+}
+
+.noselect .icon {
+  position: absolute;
+  border-left: 1px solid #c41b1b;
+  transform: translateX(110px);
+  height: 40px;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.noselect svg {
+  width: 15px;
+  fill: #eee;
+}
+
+.noselect:hover {
+  background: #ff3636;
+}
+
+.noselect:hover .text {
+  color: transparent;
+}
+
+.noselect:hover .icon {
+  width: 150px;
+  border-left: none;
+  transform: translateX(0);
+}
+
+.noselect:focus {
+  outline: none;
+}
+
+.noselect:active .icon svg {
+  transform: scale(0.8);
 }
 
 select {
@@ -170,10 +243,95 @@ select.role-select option {
   margin: 0.1rem 0;
 }
 
+/* Custom Role Selector Styles */
+.paste-button {
+  position: relative;
+  display: inline-block;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  width: fit-content;
+}
+
+.button {
+  background-color: #1d72fa;
+  color: #ffffff;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: bold;
+  border: 2px solid transparent;
+  border-radius: 15px;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dropdown-content {
+  display: none;
+  font-size: 13px;
+  position: absolute;
+  z-index: 9999;
+  min-width: 120px;
+  background-color: #212121;
+  border: 2px solid #1d72fa;
+  border-radius: 0px 15px 15px 15px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  top: 100%;
+  left: 0;
+  margin-top: 2px;
+  overflow: hidden;
+}
+
+.dropdown-content a {
+  color: #1d72fa;
+  padding: 6px 8px;
+  text-decoration: none;
+  display: block;
+  transition: 0.1s;
+  margin: 0;
+  border: none;
+}
+
+.dropdown-content a:hover {
+  background-color: #1d72fa;
+  color: #ffffff;
+}
+
+.dropdown-content a:focus {
+  background-color: #212121;
+  color: #1d72fa;
+}
+
+.dropdown-content #top:hover {
+  border-radius: 0px 13px 0px 0px;
+  margin: 0;
+  padding: 6px 8px;
+}
+
+.dropdown-content #middle:hover {
+  border-radius: 0px;
+  margin: 0;
+  padding: 6px 8px;
+}
+
+.dropdown-content #bottom:hover {
+  border-radius: 0px 0px 13px 13px;
+  margin: 0;
+  padding: 6px 8px;
+}
+
+.paste-button:hover button {
+  border-radius: 15px 15px 0px 0px;
+  background-color: #1557c7;
+}
+
+.paste-button:hover .dropdown-content {
+  display: block;
+}
+
 .it-users-table tbody tr {
   border-bottom: 1px solid #e0e7ef;
   margin-bottom: 6px;
   display: table-row;
+  overflow: visible;
 }
 
 .it-users-table tbody tr:not(:last-child) {
@@ -203,5 +361,104 @@ select.role-select option {
   }
   .approve-btn, .reject-btn, .remove-btn, select {
     font-size: 0.6rem;
+  }
+}
+
+/* Custom Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+}
+
+.modal-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.modal-message {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.modal-btn {
+  padding: 0.5rem 1.5rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-btn-cancel {
+  background-color: #6c757d;
+  color: white;
+}
+
+.modal-btn-cancel:hover {
+  background-color: #5a6268;
+}
+
+.modal-btn-confirm {
+  background-color: #dc3545;
+  color: white;
+}
+
+.modal-btn-confirm:hover {
+  background-color: #c82333;
+}
+
+/* Success Message Styles */
+.success-message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #28a745;
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-weight: 600;
+  font-size: 0.9rem;
+  z-index: 10001;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
   }
 }
