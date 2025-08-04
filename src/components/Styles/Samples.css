@@ -1,0 +1,209 @@
+.btn {
+  border-radius: 0.5em;
+  font-size: larger;
+  height: 2em;
+  width: 7em;
+  position: relative;
+  border: none;
+  background-color: hsl(218, 68%, 52%);
+  overflow: hidden;
+  isolation: isolate;
+  color: white;
+  box-shadow: 1px 2px 4px #0007;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background-color: hsl(218, 68%, 47%);
+}
+
+.btn-approve-all {
+  border-radius: 0.5em;
+  font-size: larger;
+  height: 2em;
+  width: 7em;
+  position: relative;
+  border: none;
+  background-color: hsl(218, 68%, 52%);
+  overflow: hidden;
+  isolation: isolate;
+  color: white;
+  box-shadow: 1px 2px 4px #0007;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.btn-approve-all:hover {
+  background-color: hsl(218, 68%, 47%);
+}
+
+.btn-approve-all.disabled:hover {
+  background-color: hsl(218, 68%, 70%);
+}
+
+.btn.disabled:hover {
+  background-color: hsl(218, 68%, 70%);
+}
+
+/* Tooltip styling */
+.btn[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 0.5em 0.75em;
+  border-radius: 0.25em;
+  font-size: 0.85em;
+  white-space: nowrap;
+  z-index: 1000;
+  margin-bottom: 0.5em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.btn[title]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 0.25em solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.9);
+  margin-bottom: 0.25em;
+  z-index: 1000;
+}
+
+.btn > span {
+  position: relative;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.ripple-container {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(12, 0.5em);
+}
+
+.ripple-container > span {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.ripple-container > span::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  background-color: hsl(218, 68%, 65%);
+  transition: width 0.5s ease-out, height 0.5s ease-out, opacity 1s;
+  width: 13em;
+  height: 13em;
+  opacity: 0;
+  border-radius: 999em;
+}
+
+.ripple-container > span:active::after {
+  transition: 0s;
+  width: 0em;
+  height: 0em;
+  opacity: 1;
+}
+
+/*
+Use this instead if you want the ripple to start
+immediately on click but end abruptly on unclick:
+
+.ripple-container > span::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  background-color: hsl(218, 68%, 65%);
+  width: 0em;
+  height: 0em;
+  border-radius: 999em;
+  opacity: 1;
+}
+
+.ripple-container > span:active::after {
+  transition: width 0.25s ease-out, height 0.25s ease-out, opacity 0.75s;
+  width: 13em;
+  height: 13em;
+  opacity: 0;
+}
+
+Your Global selectors gets triggered by this:
+*/
+
+.inner {
+  position: relative;
+  inset: 0px;
+  padding: 0.25em 0.5em;
+  border-radius: 4px;
+  background: radial-gradient(circle at 50% 100%, #30f8f8 10%, #30f8f800 55%),
+    linear-gradient(#00526a, #009dcd);
+  overflow: hidden;
+  transition: inherit;
+}
+
+.inner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(-65deg, #0000 40%, #fff7 50%, #0000 70%);
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: thing 3s ease infinite;
+}
+
+@keyframes thing {
+  0% {
+    background-position: 130%;
+    opacity: 1;
+  }
+
+  to {
+    background-position: -166%;
+    opacity: 0;
+  }
+}
+
+.top-white {
+  position: absolute;
+  border-radius: inherit;
+  inset: 0 -8em;
+  background: radial-gradient(
+    circle at 50% -270%,
+    #fff 45%,
+    #fff6 60%,
+    #fff0 60%
+  );
+  transition: inherit;
+}
+
+.inner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  transition: inherit;
+  box-shadow: inset 0px 2px 8px -2px #0000;
+}
+
+.frutiger-button:active .inner::after {
+  box-shadow: inset 0px 2px 8px -2px #000a;
+}
+
+.text {
+  position: relative;
+  z-index: 1;
+  color: #333333;
+  font-weight: 550;
+  font-size: 1.1em;
+  transition: inherit;
+}
