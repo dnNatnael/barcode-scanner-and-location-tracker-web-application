@@ -2,10 +2,10 @@ import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { auth, db } from "../../firebase";
 import { getDoc, doc, collection, onSnapshot, query, where, updateDoc } from "firebase/firestore";
-import "../styles/LocationTracker.css";
+import "../Styles/LocationTracker.css";
 import LocationTrackingMap from "./LocationTrackingMap";
 import { useLocationDisplay } from "../../contexts/LocationDisplayContext";
-import iclLogo from "../asssets/icl-logo-form.png";
+import iclLogo from "../Asssets/icl-logo-form.png";
 
 const LocationTracker = () => {
   const location = useLocation();

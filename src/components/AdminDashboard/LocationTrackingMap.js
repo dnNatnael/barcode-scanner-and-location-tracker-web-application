@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import '../styles/LocationTrackingMap.css';
+import '../Styles/LocationTrackingMap.css';
 import { useLocationDisplay } from '../../contexts/LocationDisplayContext';
 
 // Component to handle map centering

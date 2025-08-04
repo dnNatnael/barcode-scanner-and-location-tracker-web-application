@@ -6,7 +6,7 @@ import { useLocationDisplay } from "../../contexts/LocationDisplayContext";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import "../styles/LocationTrackingMap.css";
+import "../Styles/LocationTrackingMap.css";
 
 // Component to handle map centering
 const MapController = React.forwardRef(({ driver, isLocationVisible, hasLocation }, ref) => {
