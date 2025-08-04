@@ -1,0 +1,177 @@
+/* Location Tracking Map Styles */
+.location-tracking-map {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.map-container {
+  width: 100%;
+  height: 400px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  position: relative;
+}
+
+/* Custom marker styles */
+.custom-marker {
+  background: transparent;
+  border: none;
+}
+
+/* Control panel styles */
+.map-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.map-control-btn {
+  padding: 8px 12px;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9em;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: all 0.2s;
+}
+
+.map-control-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.map-control-btn:active {
+  transform: translateY(0);
+}
+
+/* Status display styles */
+.map-status {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 1000;
+  background: rgba(255,255,255,0.9);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85em;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  backdrop-filter: blur(4px);
+}
+
+/* Legend styles */
+.map-legend {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  z-index: 1000;
+  background: rgba(255,255,255,0.9);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.8em;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  backdrop-filter: blur(4px);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+.legend-item:last-child {
+  margin-bottom: 0;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .map-container {
+    height: 300px;
+  }
+  
+  .map-controls {
+    top: 5px;
+    right: 5px;
+  }
+  
+  .map-control-btn {
+    padding: 6px 10px;
+    font-size: 0.8em;
+  }
+  
+  .map-status,
+  .map-legend {
+    bottom: 5px;
+    padding: 6px 10px;
+    font-size: 0.75em;
+  }
+  
+  .map-status {
+    left: 5px;
+  }
+  
+  .map-legend {
+    right: 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .map-container {
+    height: 250px;
+  }
+  
+  .map-controls {
+    position: static;
+    margin-top: 10px;
+    flex-direction: row;
+    justify-content: center;
+  }
+  
+  /* Keep .map-status and .map-legend absolutely positioned over the map on mobile */
+}
+
+/* Leaflet map specific styles */
+.leaflet-container {
+  font-family: inherit;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.leaflet-popup-content {
+  margin: 8px 12px;
+  font-size: 0.9em;
+}
+
+.leaflet-popup-tip {
+  background: white;
+}
+
+/* Animation for tracking status */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+.tracking-active {
+  animation: pulse 2s infinite;
+} 
