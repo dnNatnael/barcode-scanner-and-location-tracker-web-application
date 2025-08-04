@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { db } from "../../firebase";
 import { collection, getDocs, updateDoc, doc, deleteDoc, onSnapshot, setDoc } from "firebase/firestore";
-import "../Styles/IT.css";
+import "../styles/IT.css";
 import { useNavigate } from "react-router-dom";
 
 const padId = (num) => {
@@ -77,6 +77,10 @@ const IT = () => {
   const [driverSortAsc, setDriverSortAsc] = useState(true);
   const [searchActive, setSearchActive] = useState(false);
   const searchResultsRef = useRef(null);
+  const [showModal, setShowModal] = useState(false);
+  const [modalData, setModalData] = useState({ userId: null, userName: null });
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Enhanced outside click handler
   useEffect(() => {
@@ -169,6 +173,8 @@ const IT = () => {
       role,
       userId: userIdVal,
       createdAt: user.createdAt || new Date(),
+      online: false, // default offline
+      networkStatus: 'offline', // default offline
     });
     await deleteDoc(doc(db, "users", userId));
     setPendingRoles((prev) => {
@@ -202,6 +208,8 @@ const IT = () => {
       role,
       userId: userIdVal,
       createdAt: user.createdAt || new Date(),
+      online: false, // default offline
+      networkStatus: 'offline', // default offline
     });
     // Optionally, delete from users collection if it exists
     await deleteDoc(doc(db, "users", userId));
@@ -209,6 +217,18 @@ const IT = () => {
 
   const handleReject = async (userId) => {
     const user = users.find((u) => u.id === userId);
+    if (!user) return;
+    
+    // Show modal for rejection confirmation
+    setModalData({ userId: userId, userName: user.name, action: 'reject' });
+    setShowModal(true);
+  };
+
+  const confirmReject = async () => {
+    const { userId } = modalData;
+    const user = users.find((u) => u.id === userId);
+    if (!user) return;
+    
     // Only delete from 'users' collection, do not add to resignated collection
     await deleteDoc(doc(db, "users", userId));
     setPendingRoles((prev) => {
@@ -216,13 +236,36 @@ const IT = () => {
       delete copy[userId];
       return copy;
     });
+    
+    // Close modal
+    setShowModal(false);
+    setModalData({ userId: null, userName: null, action: null });
+    
+    // Show success message
+    setSuccessMessage(`${user.name} has been rejected successfully.`);
+    setShowSuccessMessage(true);
+    
+    // Hide success message after 3 seconds
+    setTimeout(() => {
+      setShowSuccessMessage(false);
+      setSuccessMessage("");
+    }, 3000);
   };
 
   const handleRemove = async (userId) => {
     const user = users.find((u) => u.id === userId) || adminUsers.find((u) => u.id === userId) || driverUsers.find((u) => u.id === userId);
     if (!user) return;
-    const confirmed = window.confirm("Are you sure you want to remove this user from the database? This action cannot be undone.");
-    if (!confirmed) return;
+    
+    // Show modal instead of alert
+    setModalData({ userId: userId, userName: user.name, action: 'remove' });
+    setShowModal(true);
+  };
+
+  const confirmRemove = async () => {
+    const { userId } = modalData;
+    const user = users.find((u) => u.id === userId) || adminUsers.find((u) => u.id === userId) || driverUsers.find((u) => u.id === userId);
+    if (!user) return;
+    
     const role = user.role || "driver";
     const userIdVal = user.userId || await getNextId(users, role);
     // Use the existing document ID
@@ -255,6 +298,25 @@ const IT = () => {
       delete copy[userId];
       return copy;
     });
+    
+    // Close modal
+    setShowModal(false);
+    setModalData({ userId: null, userName: null, action: null });
+    
+    // Show success message
+    setSuccessMessage(`${user.name} has been removed successfully.`);
+    setShowSuccessMessage(true);
+    
+    // Hide success message after 3 seconds
+    setTimeout(() => {
+      setShowSuccessMessage(false);
+      setSuccessMessage("");
+    }, 3000);
+  };
+
+  const cancelRemove = () => {
+    setShowModal(false);
+    setModalData({ userId: null, userName: null });
   };
 
   // New Registrations: approved is null or missing
@@ -279,8 +341,8 @@ const IT = () => {
   const filteredDriversSorted = [...filteredDrivers].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
   return (
-    <div className="it-container">
-      <h1>Manage Registered Users</h1>
+    <div style={{ width: '100%', maxWidth: '100%', margin: '40px auto 0 auto', padding: '0' }}>
+      <h1 style={{ textAlign: 'center' }}>Manage Registered Users</h1>
       {/* Search Bar and Category Toggle */}
       <div style={{ marginBottom: '1.5em', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1em' }}>
         <input
@@ -508,41 +570,24 @@ const IT = () => {
                         {user.role}
                       </span>
                     ) : (
-                      <select
-                        value={pendingRoles[user.id] || ""}
-                        onChange={(e) => handlePendingRoleChange(user.id, e.target.value)}
-                        className="role-select"
-                        style={{
-                          width: '80px',
-                          minWidth: 60,
-                          fontSize: '0.85rem',
-                          padding: '0.18rem 0.8rem',
-                          textTransform: 'capitalize',
-                          fontWeight: 500,
-                          borderRadius: '9999px',
-                          border: '1px solid #bfc9d9',
-                          background: '#f8fafc',
-                          height: '1.7rem',
-                          outline: 'none',
-                          transition: 'border 0.2s',
-                          textAlign: 'left',
-                          display: 'inline-block',
-                          marginLeft: 0,
-                        }}
-                      >
-                        <option value="" disabled style={{ fontWeight: 700, color: '#22223b', background: '#fff' }}>Role</option>
-                        <option value="admin">Admin</option>
-                        <option value="driver">Driver</option>
-                      </select>
+                      <div className="paste-button">
+                        <button className="button">
+                          {pendingRoles[user.id] ? `${pendingRoles[user.id].charAt(0).toUpperCase() + pendingRoles[user.id].slice(1)} ▼` : 'Role ▼'}
+                        </button>
+                        <div className="dropdown-content">
+                          <a id="top" href="#" onClick={(e) => { e.preventDefault(); handlePendingRoleChange(user.id, 'admin'); }}>Admin</a>
+                          <a id="middle" href="#" onClick={(e) => { e.preventDefault(); handlePendingRoleChange(user.id, 'driver'); }}>Driver</a>
+                        </div>
+                      </div>
                     )}
                   </td>
                   <td style={{ fontWeight: 700, color: '#b8860b', fontSize: '0.75rem' }}>Pending</td>
-                  <td>
+                  <td style={{ padding: '0.1rem 0.2rem', margin: 0 }}>
                     <button
                       className="approve-btn"
                       onClick={() => handleApprovePending(user.id)}
                       disabled={!pendingRoles[user.id]}
-                      style={{ marginRight: '0.2rem' }}
+                      style={{ marginRight: '0.1rem' }}
                     >
                       Approve
                     </button>
@@ -557,7 +602,7 @@ const IT = () => {
               ))}
             </tbody>
           </table>
-          <div style={{ fontSize: '0.9em', marginTop: '0.3em', color: '#555' }}>
+          <div style={{ fontSize: '0.9em', marginTop: '0.3em', color: '#ffffff' }}>
             Total New Registrations: {pendingUsers.length}
           </div>
 
@@ -596,7 +641,7 @@ const IT = () => {
                     )}
                   </td>
                   <td>{user.createdAt ? formatDateTime(user.createdAt) : "-"}</td>
-                  <td>
+                  <td style={{ padding: '0.1rem 0.2rem', margin: 0 }}>
                     <button
                       className="remove-btn"
                       onClick={() => handleRemove(user.id)}
@@ -608,7 +653,7 @@ const IT = () => {
               ))}
             </tbody>
           </table>
-          <div style={{ fontSize: '0.9em', marginTop: '0.3em', color: '#555' }}>
+          <div style={{ fontSize: '0.9em', marginTop: '0.3em', color: '#ffffff' }}>
             Total Admins: {sortedAdminUsers.length}
           </div>
 
@@ -647,7 +692,7 @@ const IT = () => {
                     )}
                   </td>
                   <td>{user.createdAt ? formatDateTime(user.createdAt) : "-"}</td>
-                  <td>
+                  <td style={{ padding: '0.1rem 0.2rem', margin: 0 }}>
                     <button
                       className="remove-btn"
                       onClick={() => handleRemove(user.id)}
@@ -659,11 +704,11 @@ const IT = () => {
               ))}
             </tbody>
           </table>
-          <div style={{ fontSize: '0.9em', marginTop: '0.3em', color: '#555' }}>
+          <div style={{ fontSize: '0.9em', marginTop: '0.3em', color: '#ffffff' }}>
             Total Drivers: {sortedDriverUsers.length}
           </div>
 
-          <div style={{ fontWeight: 'bold', fontSize: '1em', marginTop: '1.5em', textAlign: 'right', color: '#1c6954' }}>
+          <div style={{ fontWeight: 'bold', fontSize: '1em', marginTop: '1.5em', textAlign: 'right', color: '#000000' }}>
             Total Registered Users: {sortedAdminUsers.length + sortedDriverUsers.length}
           </div>
           
@@ -696,6 +741,38 @@ const IT = () => {
             </button>
           </div>
         </>
+      )}
+      
+      {/* Custom Confirmation Modal */}
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-title">
+              {modalData.action === 'reject' ? 'Confirm Rejection' : 'Confirm Removal'}
+            </div>
+            <div className="modal-message">
+              Are you sure you want to {modalData.action === 'reject' ? 'reject' : 'remove'} <strong>{modalData.userName}</strong>? This action cannot be undone.
+            </div>
+            <div className="modal-buttons">
+              <button className="modal-btn modal-btn-cancel" onClick={cancelRemove}>
+                Cancel
+              </button>
+              <button 
+                className="modal-btn modal-btn-confirm" 
+                onClick={modalData.action === 'reject' ? confirmReject : confirmRemove}
+              >
+                {modalData.action === 'reject' ? 'Reject User' : 'Remove User'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Success Message */}
+      {showSuccessMessage && (
+        <div className="success-message">
+          {successMessage}
+        </div>
       )}
     </div>
   );
