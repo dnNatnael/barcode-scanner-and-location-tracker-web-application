@@ -36,7 +36,7 @@ body {
   width: 320px;
   height: 160px;
   margin: 0;
-  background: url('../asssets/icl-logo-form.png') no-repeat center center;
+  background: url('../Assets/icl-logo-form.png') no-repeat center center;
   background-size: contain;
   background-repeat: no-repeat;
   min-width: 80px;

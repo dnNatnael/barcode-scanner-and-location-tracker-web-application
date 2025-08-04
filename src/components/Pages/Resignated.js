@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { db } from "../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
-import "../Styles/Resignated.css";
 import { useNavigate } from "react-router-dom";
 
 const formatDate = (date) => {
