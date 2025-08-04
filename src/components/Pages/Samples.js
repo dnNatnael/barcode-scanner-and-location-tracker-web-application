@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { db } from "../../firebase";
 import { collection, onSnapshot, query, orderBy, getDocs, updateDoc, doc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import "../styles/Samples.css";
+import "../Styles/Samples.css";
 
 const Samples = () => {
   const [samples, setSamples] = useState([]);

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { auth, db } from "../../firebase";
 import { collection, query, orderBy, onSnapshot, where, getDocs, updateDoc, getDoc, doc, serverTimestamp } from "firebase/firestore";
-import "../styles/Samples.css";
+import "../Styles/Samples.css";
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {

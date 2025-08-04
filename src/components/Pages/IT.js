@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { db } from "../../firebase";
 import { collection, getDocs, updateDoc, doc, deleteDoc, onSnapshot, setDoc } from "firebase/firestore";
-import "../styles/IT.css";
+import "../Styles/IT.css";
 import { useNavigate } from "react-router-dom";
 
 const padId = (num) => {

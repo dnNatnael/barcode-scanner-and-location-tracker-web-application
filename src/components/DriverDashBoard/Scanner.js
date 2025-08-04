@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { auth, db } from "../../firebase";
 import { getDoc, doc, collection, addDoc, setDoc, serverTimestamp, query, orderBy, onSnapshot, where, getDocs, updateDoc } from "firebase/firestore";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
-import "../styles/Login.css";
+import "../Styles/Login.css";
 import { useLocationDisplay } from "../../contexts/LocationDisplayContext";
 
 const CAMERA_WIDTH = window.innerWidth;

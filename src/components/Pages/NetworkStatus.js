@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import "../styles/NetworkStatus.css";
+import "../Styles/NetworkStatus.css";
 import { auth, db } from "../../firebase";
 import { getDoc, collection, query, where, getDocs, updateDoc, doc, serverTimestamp } from "firebase/firestore";
 import { useLocationDisplay } from "../../contexts/LocationDisplayContext";
