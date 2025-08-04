@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { db } from "../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
-import "../Styles/Resignated.css";
+import "../styles/Resignated.css";
 import { useNavigate } from "react-router-dom";
 
 const formatDate = (date) => {
@@ -165,13 +165,13 @@ const Resignated = () => {
   };
 
   return (
-    <div className="resignated-container">
+    <div style={{ width: '100%', maxWidth: '100%', margin: '40px auto 0 auto', padding: '0' }}>
       <button
         onClick={() => navigate(-1)}
         style={{
           position: 'absolute',
-          top: 60,
-          left: 100,
+          top: 20,
+          left: 20,
           padding: '0.18em 0.7em',
           fontSize: '0.85em',
           borderRadius: '8px',
@@ -197,7 +197,7 @@ const Resignated = () => {
       >
         <span style={{ fontSize: '1em', marginRight: 3 }}>&larr;</span> <span style={{ fontSize: '0.95em' }}>Back</span>
       </button>
-      <h1>Removed Users</h1>
+      <h1 style={{ textAlign: 'center' }}>Removed Users</h1>
       {/* Search Bar and Category Toggle */}
       <div style={{ marginBottom: '1.5em', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1em' }}>
         <input
@@ -432,7 +432,7 @@ const Resignated = () => {
           )}
         </tbody>
       </table>
-      <div style={{ fontSize: '0.8em', marginTop: '0.5em', color: '#555', textAlign: 'right' }}>
+      <div style={{ fontSize: '0.8em', marginTop: '0.5em', color: '#ffffff', textAlign: 'left' }}>
         Total Removed Admins: {sortedAdminUsers.length}
       </div>
       <h2>Drivers</h2>
@@ -468,10 +468,10 @@ const Resignated = () => {
           )}
         </tbody>
       </table>
-      <div style={{ fontSize: '0.8em', marginTop: '0.5em', color: '#555', textAlign: 'right' }}>
+      <div style={{ fontSize: '0.8em', marginTop: '0.5em', color: '#ffffff', textAlign: 'left' }}>
         Total Removed Drivers: {sortedDriverUsers.length}
       </div>
-      <div style={{ fontSize: '0.9em', marginTop: '1em', color: '#1c6954', textAlign: 'right', fontWeight: 700 }}>
+      <div style={{ fontSize: '0.9em', marginTop: '1em', color: '#000000', textAlign: 'right', fontWeight: 700 }}>
         Total Removed Users: {sortedAdminUsers.length + sortedDriverUsers.length}
       </div>
     </div>
