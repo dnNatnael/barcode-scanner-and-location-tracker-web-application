@@ -5,13 +5,13 @@ import { getFirestore } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCCX36I3J1twM_LPaB8jL3AuauUaOenuPg",
-  authDomain: "barcode-scanner-4b473.firebaseapp.com",
-  projectId: "barcode-scanner-4b473",
-  storageBucket: "barcode-scanner-4b473.appspot.com",
-  messagingSenderId: "322354540290",
-  appId: "1:322354540290:web:634bee7386024b801fdc1b",
-  measurementId: "G-JKQN57TZBS"
+  apiKey: "AIzaSyA8l4UZel-WTnftJJxH6S1sZ5GUJ4JlrcA",
+  authDomain: "barcode-app-61c52.firebaseapp.com",
+  projectId: "barcode-app-61c52",
+  storageBucket: "barcode-app-61c52.firebasestorage.app",
+  messagingSenderId: "995865908540",
+  appId: "1:995865908540:web:63b18b22bad649aa9cfa39",
+  measurementId: "G-1W3C0P1R4M"
 };
 
 // Initialize Firebase
