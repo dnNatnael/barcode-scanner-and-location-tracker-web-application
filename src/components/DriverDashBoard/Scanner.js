@@ -29,6 +29,7 @@ const Scanner = () => {
   const [showLocationInput, setShowLocationInput] = useState(false);
   const [scannedBarcodes, setScannedBarcodes] = useState(new Set());
   const [cameraActive, setCameraActive] = useState(true);
+  const [scanSuccessMessage, setScanSuccessMessage] = useState("");
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -300,8 +301,8 @@ const Scanner = () => {
     setCameraActive(false);
     setScannedBarcode(barcodeText);
     setShowLocationInput(true);
-    // Show success message
-    alert("Scanned Successfully!");
+    setScanSuccessMessage("Scanned Successfully!");
+    setTimeout(() => setScanSuccessMessage(""), 4000);
   };
 
   const handleSubmitSample = async () => {
@@ -438,6 +439,12 @@ Location: ${locationInput.trim()}`);
         {userId && <p>Your ID: {userId}</p>}
       </div>
       
+      {/* Success message styled like signup page, no icon */}
+      {scanSuccessMessage && (
+        <div className="success-message">
+          {scanSuccessMessage}
+        </div>
+      )}
       {/* Location Input Section */}
       {showLocationInput && (
         <div style={{
@@ -1205,86 +1212,37 @@ async function getDriverName(uid) {
 async function saveSampleScan(barcode, location, sampleType) {
   const user = auth.currentUser;
   if (!user) throw new Error("Not logged in");
-  
+
   // Get driver information
   const driverId = await getDriverId(user.uid);
   const driverName = await getDriverName(user.uid);
-  
-  console.log("=== SAVING SAMPLE ===");
-  console.log("User UID:", user.uid);
-  console.log("Driver ID:", driverId);
-  console.log("Driver Name:", driverName);
-  console.log("Barcode:", barcode);
-  console.log("Location:", location);
-  console.log("Sample Type:", sampleType);
-  
-  // Check if this barcode already exists in Firestore
+
+  // Always store as sub-sample: SID-<barcode>_N
   const baseSampleId = `SID-${barcode}`;
-  const existingDoc = await getDoc(doc(db, "samples", baseSampleId));
-  
-  let finalSampleId;
-  let isSubSample = false;
-  
-  if (existingDoc.exists()) {
-    // This is a repeated scan - create a sub-sample
-    isSubSample = true;
-    
-    // Find the next available sub-sample number
-    const samplesQuery = query(
-      collection(db, "samples"), 
-      where("baseBarcode", "==", barcode)
-    );
-    const existingSamples = await getDocs(samplesQuery);
-    
-    // Count existing sub-samples for this barcode
-    const subSampleCount = existingSamples.docs.length;
-    const nextNumber = subSampleCount + 1;
-    
-    finalSampleId = `${baseSampleId}_${nextNumber}`;
-    
-    console.log("Repeated barcode scan - creating sub-sample");
-    console.log("Base Sample ID:", baseSampleId);
-    console.log("Sub-sample number:", nextNumber);
-    console.log("Final Sample ID:", finalSampleId);
-    
-    // Save sub-sample with reference to base barcode
-    await setDoc(doc(db, "samples", finalSampleId), {
-      SID: finalSampleId,                      // "SID-BA17695698563_1"
-      baseBarcode: barcode,                    // "BA17695698563" (without SID- prefix)
-      baseSampleId: baseSampleId,              // "SID-BA17695698563"
-      sampleType: sampleType,                  // "Blood, Urine, Tissue, etc."
-      driver: driverId,                        // "DID-xxxx" 
-      driverName: driverName,                  // "Your Name"
-      date: serverTimestamp(),                 // July 31, 2025, 2:26:11 PM (UTC+3)
-      location: location,                      // "users input (hospitals or clinic or any other)"
-      subSampleNumber: nextNumber,             // 1, 2, 3, etc.
-      isSubSample: true                        // Flag to identify sub-samples
-    });
-  } else {
-    // This is the first scan of this barcode - create main sample
-    finalSampleId = baseSampleId;
-    
-    console.log("First time scanning this barcode - creating main sample");
-    console.log("Sample ID:", finalSampleId);
-    
-    // Save main sample
-    await setDoc(doc(db, "samples", finalSampleId), {
-      SID: finalSampleId,                      // "SID-BA17695698563"
-      baseBarcode: barcode,                    // "BA17695698563" (without SID- prefix)
-      baseSampleId: baseSampleId,              // "SID-BA17695698563"
-      sampleType: sampleType,                  // "Blood, Urine, Tissue, etc."
-      driver: driverId,                        // "DID-xxxx" 
-      driverName: driverName,                  // "Your Name"
-      date: serverTimestamp(),                 // July 31, 2025, 2:26:11 PM (UTC+3)
-      location: location,                      // "users input (hospitals or clinic or any other)"
-      subSampleNumber: 1,                      // First sample is number 1
-      isSubSample: false                       // Flag to identify main samples
-    });
-  }
-  
+  const samplesQuery = query(
+    collection(db, "samples"),
+    where("baseBarcode", "==", barcode)
+  );
+  const existingSamples = await getDocs(samplesQuery);
+  const subSampleCount = existingSamples.docs.length;
+  const nextNumber = subSampleCount + 1;
+  const finalSampleId = `${baseSampleId}_${nextNumber}`;
+
+  await setDoc(doc(db, "samples", finalSampleId), {
+    SID: finalSampleId,                      // "SID-BA17695698563_1"
+    baseBarcode: barcode,                    // "BA17695698563" (without SID- prefix)
+    baseSampleId: baseSampleId,              // "SID-BA17695698563"
+    sampleType: sampleType,                  // "Blood, Urine, Tissue, etc."
+    driver: driverId,                        // "DID-xxxx" 
+    driverName: driverName,                  // "Your Name"
+    date: serverTimestamp(),                 // July 31, 2025, 2:26:11 PM (UTC+3)
+    location: location,                      // "users input (hospitals or clinic or any other)"
+    subSampleNumber: nextNumber,             // 1, 2, 3, etc.
+    isSubSample: true                        // All are sub-samples now
+  });
+
   console.log("Sample saved successfully!");
   console.log("Final Sample ID:", finalSampleId);
-  console.log("Is Sub-sample:", isSubSample);
 }
 
 export default Scanner;

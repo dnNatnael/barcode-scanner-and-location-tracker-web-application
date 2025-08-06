@@ -500,7 +500,7 @@ const Samples = () => {
                 </tr>
                 
                 {/* Expandable sub-samples */}
-                {activeBarcode === group.barcode && group.samples.length > 1 && (
+                {activeBarcode === group.barcode && group.samples.length > 0 && (
                   <tr>
                     <td colSpan={4} style={{ padding: 0, border: 'none' }}>
                       <div style={{
@@ -539,7 +539,7 @@ const Samples = () => {
                                 <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem' }}>
                                   {sample.date?.toDate ? sample.date.toDate().toLocaleString() : '-'}
                                 </td>
-                                                                <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem' }}>
+                                <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem' }}>
                                   {sample.arrivedDate?.toDate ? (
                                     <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12.5px' }}>
                                       {(() => {
@@ -607,65 +607,10 @@ const Samples = () => {
                                       <span></span>
                                       <span></span>
                                       <span></span>
-                                      
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
                                     </div>
                                   </button>
                                 </td>
-              </tr>
+                              </tr>
                             ))}
                           </tbody>
                         </table>
