@@ -201,7 +201,8 @@ function SamplesTable({ driverName, driverId }) {
                   const grouped = {};
                   
                   samples.forEach(sample => {
-                    const barcode = sample.barcode || sample.SID?.split('_')[0] || sample.SID;
+                    // Use baseBarcode for grouping (new structure) or fallback to old logic
+                    const barcode = sample.baseBarcode || sample.barcode || sample.SID?.split('_')[0] || sample.SID;
                     if (!grouped[barcode]) {
                       grouped[barcode] = {
                         barcode: barcode,
@@ -601,9 +602,9 @@ function SamplesTable({ driverName, driverId }) {
                           </thead>
                           <tbody>
                             {group.samples.sort((a, b) => {
-                              // Extract the number from the end of SID (e.g., "_1", "_2", "_3")
-                              const aNum = parseInt(a.SID?.split('_').pop() || '0');
-                              const bNum = parseInt(b.SID?.split('_').pop() || '0');
+                              // Use subSampleNumber for sorting (new structure) or fallback to old logic
+                              const aNum = a.subSampleNumber || parseInt(a.SID?.split('_').pop() || '0');
+                              const bNum = b.subSampleNumber || parseInt(b.SID?.split('_').pop() || '0');
                               return aNum - bNum; // Sort in ascending order
                             }).map((sample, sampleIdx) => (
                               <tr key={sample._docId || sampleIdx} style={{ borderBottom: '1px solid #f8f9fa' }}>

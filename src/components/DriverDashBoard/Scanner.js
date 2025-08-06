@@ -294,40 +294,11 @@ const Scanner = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
-  // Check if barcode has already been scanned
-  const checkBarcodeExists = async (barcodeText) => {
-    try {
-      const sampleId = `SID-${barcodeText}`;
-      
-      // Check if document with SID already exists
-      const sampleDoc = await getDoc(doc(db, "samples", sampleId));
-      return sampleDoc.exists();
-    } catch (error) {
-      console.error("Error checking barcode:", error);
-      return false;
-    }
-  };
-
   const handleScanSuccess = async (barcodeText) => {
-    // Check if barcode has already been scanned
-    const alreadyScanned = await checkBarcodeExists(barcodeText);
-    
-    if (alreadyScanned) {
-      alert("This barcode is already scanned!");
-      return;
-    }
-    
-    // Check if barcode was scanned in current session
-    if (scannedBarcodes.has(barcodeText)) {
-      alert("This barcode is already scanned in this session!");
-      return;
-    }
-    
+    // Allow repeated scans of the same barcode (no session check)
     // Stop camera and show location input
     setCameraActive(false);
-    
     setScannedBarcode(barcodeText);
-    setScannedBarcodes(prev => new Set([...prev, barcodeText]));
     setShowLocationInput(true);
     // Show success message
     alert("Scanned Successfully!");
@@ -345,13 +316,15 @@ const Scanner = () => {
     }
 
     try {
-        // Generate SID using the actual barcode text
-  const sampleId = `SID-${scannedBarcode}`;
-      
       // Get driver information for the alert
       const user = auth.currentUser;
       const driverId = await getDriverId(user.uid);
       const driverName = await getDriverName(user.uid);
+      
+      // Check if this is a repeated scan
+      const baseSampleId = `SID-${scannedBarcode}`;
+      const existingDoc = await getDoc(doc(db, "samples", baseSampleId));
+      const isRepeatedScan = existingDoc.exists();
       
       await saveSampleScan(scannedBarcode, locationInput.trim(), sampleTypeInput.trim());
       setScannedBarcode("");
@@ -362,11 +335,33 @@ const Scanner = () => {
       // Restart camera for next scan
       setCameraActive(true);
       
-      alert(`✅ Sample scanned successfully!
+      if (isRepeatedScan) {
+        alert(`✅ Sub-sample scanned successfully!
 
-This will update the sample with:
+This will add a new sub-sample to the existing barcode:
 
-Sample ID: ${sampleId}
+Base Sample ID: ${baseSampleId}
+Sample Type: ${sampleTypeInput.trim()}
+Driver ID: ${driverId}
+Driver Name: ${driverName}
+Scanned at: ${new Date().toLocaleString('en-US', { 
+  timeZone: 'Asia/Jerusalem',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit'
+})} (UTC+3)
+Location: ${locationInput.trim()}
+
+The sub-sample will appear in the expanded view of the main sample.`);
+      } else {
+        alert(`✅ Sample scanned successfully!
+
+This will create a new main sample:
+
+Sample ID: ${baseSampleId}
 Sample Type: ${sampleTypeInput.trim()}
 Driver ID: ${driverId}
 Driver Name: ${driverName}
@@ -380,6 +375,7 @@ Scanned at: ${new Date().toLocaleString('en-US', {
   second: '2-digit'
 })} (UTC+3)
 Location: ${locationInput.trim()}`);
+      }
     } catch (error) {
       console.error("Error saving sample:", error);
       alert("Error saving sample. Please try again.");
@@ -1210,9 +1206,6 @@ async function saveSampleScan(barcode, location, sampleType) {
   const user = auth.currentUser;
   if (!user) throw new Error("Not logged in");
   
-  // Generate SID using the actual barcode text
-  const sampleId = `SID-${barcode}`;
-  
   // Get driver information
   const driverId = await getDriverId(user.uid);
   const driverName = await getDriverName(user.uid);
@@ -1224,17 +1217,74 @@ async function saveSampleScan(barcode, location, sampleType) {
   console.log("Barcode:", barcode);
   console.log("Location:", location);
   console.log("Sample Type:", sampleType);
-  console.log("Sample ID:", sampleId);
   
-  // Save to Firestore using SID as document ID
-  await setDoc(doc(db, "samples", sampleId), {
-    SID: sampleId,                             // "SID-BA17695698563"
-    sampleType: sampleType,                    // "Blood, Urine, Tissue, etc."
-    driver: driverId,                          // "DID-xxxx" 
-    driverName: driverName,                    // "Your Name"
-    date: serverTimestamp(),                   // July 31, 2025, 2:26:11 PM (UTC+3)
-    location: location,                        // "users input (hospitals or clinic or any other)"
-  });
+  // Check if this barcode already exists in Firestore
+  const baseSampleId = `SID-${barcode}`;
+  const existingDoc = await getDoc(doc(db, "samples", baseSampleId));
+  
+  let finalSampleId;
+  let isSubSample = false;
+  
+  if (existingDoc.exists()) {
+    // This is a repeated scan - create a sub-sample
+    isSubSample = true;
+    
+    // Find the next available sub-sample number
+    const samplesQuery = query(
+      collection(db, "samples"), 
+      where("baseBarcode", "==", barcode)
+    );
+    const existingSamples = await getDocs(samplesQuery);
+    
+    // Count existing sub-samples for this barcode
+    const subSampleCount = existingSamples.docs.length;
+    const nextNumber = subSampleCount + 1;
+    
+    finalSampleId = `${baseSampleId}_${nextNumber}`;
+    
+    console.log("Repeated barcode scan - creating sub-sample");
+    console.log("Base Sample ID:", baseSampleId);
+    console.log("Sub-sample number:", nextNumber);
+    console.log("Final Sample ID:", finalSampleId);
+    
+    // Save sub-sample with reference to base barcode
+    await setDoc(doc(db, "samples", finalSampleId), {
+      SID: finalSampleId,                      // "SID-BA17695698563_1"
+      baseBarcode: barcode,                    // "BA17695698563" (without SID- prefix)
+      baseSampleId: baseSampleId,              // "SID-BA17695698563"
+      sampleType: sampleType,                  // "Blood, Urine, Tissue, etc."
+      driver: driverId,                        // "DID-xxxx" 
+      driverName: driverName,                  // "Your Name"
+      date: serverTimestamp(),                 // July 31, 2025, 2:26:11 PM (UTC+3)
+      location: location,                      // "users input (hospitals or clinic or any other)"
+      subSampleNumber: nextNumber,             // 1, 2, 3, etc.
+      isSubSample: true                        // Flag to identify sub-samples
+    });
+  } else {
+    // This is the first scan of this barcode - create main sample
+    finalSampleId = baseSampleId;
+    
+    console.log("First time scanning this barcode - creating main sample");
+    console.log("Sample ID:", finalSampleId);
+    
+    // Save main sample
+    await setDoc(doc(db, "samples", finalSampleId), {
+      SID: finalSampleId,                      // "SID-BA17695698563"
+      baseBarcode: barcode,                    // "BA17695698563" (without SID- prefix)
+      baseSampleId: baseSampleId,              // "SID-BA17695698563"
+      sampleType: sampleType,                  // "Blood, Urine, Tissue, etc."
+      driver: driverId,                        // "DID-xxxx" 
+      driverName: driverName,                  // "Your Name"
+      date: serverTimestamp(),                 // July 31, 2025, 2:26:11 PM (UTC+3)
+      location: location,                      // "users input (hospitals or clinic or any other)"
+      subSampleNumber: 1,                      // First sample is number 1
+      isSubSample: false                       // Flag to identify main samples
+    });
+  }
+  
+  console.log("Sample saved successfully!");
+  console.log("Final Sample ID:", finalSampleId);
+  console.log("Is Sub-sample:", isSubSample);
 }
 
 export default Scanner;
