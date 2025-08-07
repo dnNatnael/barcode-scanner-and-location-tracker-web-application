@@ -340,231 +340,125 @@ const IT = () => {
   const filteredAdminsSorted = [...filteredAdmins].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   const filteredDriversSorted = [...filteredDrivers].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
+  // Calculate stats
+  const totalUsers = sortedAdminUsers.length + sortedDriverUsers.length;
+  const activeUsers = totalUsers;
+  const pendingCount = pendingUsers.length;
+  const systemLoad = totalUsers > 0 ? Math.round((activeUsers / (totalUsers + pendingCount)) * 100) : 0;
+
   return (
-    <div style={{ width: '100%', maxWidth: '100%', margin: '40px auto 0 auto', padding: '0' }}>
-      <h1 style={{ textAlign: 'center' }}>Manage Registered Users</h1>
-      {/* Search Bar and Category Toggle */}
-      <div style={{ marginBottom: '1.5em', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1em' }}>
+    <div className="retro-wave-page">
+      <div className="container">
+        {/* Retro Grid Background */}
+        <div className="grid-background"></div>
+
+        {/* Geometric Shapes */}
+        <div className="shape shape-1"></div>
+        <div className="shape shape-2"></div>
+        <div className="shape shape-3"></div>
+        <div className="shape shape-4"></div>
+
+        <div className="content">
+          {/* Header */}
+          <div className="header-card">
+            <div className="header-content">
+              <div className="title-section">
+                <h1 className="main-title">Manage Registered Users</h1>
+              </div>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="filter-card">
+            <div className="filter-grid">
+              <div className="filter-input">
+                <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.35-4.35"></path>
+                </svg>
         <input
           type="text"
-          placeholder={searchCategory ? "Search users by name..." : "First select role"}
+                  placeholder="SEARCH USERS..." 
+                  className="search-field"
           value={searchTerm}
-          onFocus={() => searchCategory && setSearchActive(true)}
-          onChange={e => {
-            if (searchCategory) {
-              setSearchTerm(e.target.value);
-              setSearchActive(true);
-            }
-          }}
-          disabled={!searchCategory}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onFocus={() => setSearchActive(true)}
           ref={searchInputRef}
-          style={{
-            width: '40%', // reduced from 60%
-            maxWidth: 250, // reduced from 400
-            padding: '0.4em 0.8em', // reduced padding
-            fontSize: '0.95em', // reduced font size
-            borderRadius: '6px', // slightly smaller
-            border: '1px solid #bfc9d9',
-            marginBottom: '0.3em',
-            outline: 'none',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-            background: !searchCategory ? '#f3f3f3' : undefined,
-            color: !searchCategory ? '#aaa' : undefined,
-            cursor: !searchCategory ? 'not-allowed' : undefined,
-          }}
-        />
-        {searchTerm && searchCategory && (
-          <button
-            onClick={() => setSearchTerm("")}
-            style={{
-              marginLeft: 8,
-              padding: '0.3em 0.7em', // reduced
-              fontSize: '0.9em', // reduced
-              borderRadius: '5px',
-              border: 'none',
-              background: '#eee',
-              cursor: 'pointer',
-              color: '#333'
-            }}
-          >
-            Clear
-          </button>
-        )}
-        {/* Category Toggle Buttons */}
-        <div style={{ display: 'flex', gap: '0.5em', marginLeft: 16 }}>
-          <button
-            ref={adminsBtnRef}
-            onClick={() => {
-              setSearchCategory('admins');
-              setSearchTerm("");
-              setTimeout(() => {
-                if (searchInputRef.current) searchInputRef.current.focus();
-              }, 0);
-            }}
-            style={{
-              padding: '0.3em 0.8em', // reduced
-              borderRadius: '5px',
-              border: searchCategory === 'admins' ? '2px solid #457b9d' : '1px solid #bfc9d9',
-              background: searchCategory === 'admins' ? '#e9f0fa' : '#f8fafc',
-              color: searchCategory === 'admins' ? '#1d3557' : '#333',
-              fontWeight: searchCategory === 'admins' ? 700 : 500,
-              cursor: 'pointer',
-              fontSize: '0.95em', // reduced
-              transition: 'all 0.2s',
-            }}
-          >
-            Admins
-          </button>
-          <button
-            ref={driversBtnRef}
-            onClick={() => {
-              setSearchCategory('drivers');
-              setSearchTerm("");
-              setTimeout(() => {
-                if (searchInputRef.current) searchInputRef.current.focus();
-              }, 0);
-            }}
-            style={{
-              padding: '0.3em 0.8em', // reduced
-              borderRadius: '5px',
-              border: searchCategory === 'drivers' ? '2px solid #457b9d' : '1px solid #bfc9d9',
-              background: searchCategory === 'drivers' ? '#e9f0fa' : '#f8fafc',
-              color: searchCategory === 'drivers' ? '#1d3557' : '#333',
-              fontWeight: searchCategory === 'drivers' ? 700 : 500,
-              cursor: 'pointer',
-              fontSize: '0.95em', // reduced
-              transition: 'all 0.2s',
-            }}
-          >
-            Drivers
-          </button>
+                />
         </div>
+
+              <div className="filter-select">
+                <select className="select-field select-blue" value={searchCategory} onChange={(e) => setSearchCategory(e.target.value)}>
+                  <option value="">SEARCH IN: ALL</option>
+                  <option value="admins">SEARCH IN: ADMINS</option>
+                  <option value="drivers">SEARCH IN: DRIVERS</option>
+                </select>
       </div>
-      {searchActive && searchTerm && searchCategory && (
-        <div ref={searchResultsRef} style={{ marginBottom: '2em', display: 'flex', justifyContent: 'center' }}>
-            {searchCategory === 'admins' && (
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{
-                  width: '100%',
-                  maxWidth: 800,
-                background: '#1c6954', // highlight color
-                color: '#fff', // white text
-                  borderRadius: '8px',
-                padding: '0.3em 0',
-                  marginBottom: 6,
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  fontWeight: 700,
-                fontSize: '1.05em',
-                  letterSpacing: '0.5px',
-                border: 'none',
-                boxShadow: 'none',
-                }}>
-                  <span style={{ textAlign: 'center', width: '100%' }}>Admins</span>
+
+              <div className="filter-select">
+                <select className="select-field select-indigo">
+                  <option value="all">ROLE: ALL</option>
+                  <option value="admin">ROLE: ADMIN</option>
+                  <option value="driver">ROLE: DRIVER</option>
+                </select>
                 </div>
-                <ul style={{ listStyle: 'none', padding: 0, minHeight: 32, width: '100%', maxWidth: 800 }}>
-                  {filteredAdminsSorted.length === 0 ? (
-                    <li style={{ color: '#888', fontStyle: 'italic' }}>No matching admins found.</li>
-                  ) : (
-                    filteredAdminsSorted.map(user => (
-                      <li
-                        key={user.id}
-                        style={{
-                          padding: '4px 0',
-                          borderBottom: '1px solid #eee',
-                          display: 'flex',
-                          width: '100%',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                        fontSize: '0.6rem', // was 0.7rem
-                          cursor: 'pointer',
-                          transition: 'background 0.2s',
-                        }}
-                        onClick={() => handleResultClick(user.id)}
-                        title={`Go to ${user.name} in table`}
-                      >
-                        <span style={{ fontWeight: 500, textAlign: 'left', flex: 1 }}>{user.name}</span>
-                      <span style={{ color: '#888', fontSize: '0.7rem', textAlign: 'right', flex: 1 }}>{user.userId || '-'}</span>
-                      </li>
-                    ))
-                  )}
-                </ul>
+
+              <div className="filter-select">
+                <select className="select-field select-sky">
+                  <option value="all">STATUS: ALL</option>
+                  <option value="approved">STATUS: APPROVED</option>
+                  <option value="pending">STATUS: PENDING</option>
+                </select>
               </div>
-            )}
-            {searchCategory === 'drivers' && (
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{
-                  width: '100%',
-                  maxWidth: 800,
-                background: '#1c6954', // highlight color
-                color: '#fff', // white text
-                  borderRadius: '8px',
-                padding: '0.3em 0',
-                  marginBottom: 6,
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  fontWeight: 700,
-                fontSize: '1.05em',
-                  letterSpacing: '0.5px',
-                border: 'none',
-                boxShadow: 'none',
-                }}>
-                  <span style={{ textAlign: 'center', width: '100%' }}>Drivers</span>
+            </div>
+
+            <div className="filter-summary">
+              <div className="active-filters">
+                <span>◄ FILTERS ACTIVE ►</span>
+                <div id="filterBadges">
+                  {searchTerm && <span className="filter-badge">SEARCH: {searchTerm}</span>}
+                  {searchCategory && <span className="filter-badge">CATEGORY: {searchCategory.toUpperCase()}</span>}
                 </div>
-                <ul style={{ listStyle: 'none', padding: 0, minHeight: 32, width: '100%', maxWidth: 800 }}>
-                  {filteredDriversSorted.length === 0 ? (
-                    <li style={{ color: '#888', fontStyle: 'italic' }}>No matching drivers found.</li>
-                  ) : (
-                    filteredDriversSorted.map(user => (
-                      <li
-                        key={user.id}
-                        style={{
-                          padding: '4px 0',
-                          borderBottom: '1px solid #eee',
-                          display: 'flex',
-                          width: '100%',
-                          alignItems: 'center',
-                          fontSize: '1em',
-                          cursor: 'pointer',
-                          transition: 'background 0.2s',
-                          justifyContent: 'space-between',
-                        }}
-                        onClick={() => handleResultClick(user.id)}
-                        title={`Go to ${user.name} in table`}
-                      >
-                        <span style={{ fontWeight: 500, textAlign: 'left', flex: 1, fontSize: '0.7rem' }}>{user.name}</span>
-                        <span style={{ color: '#888', fontSize: '0.7rem', textAlign: 'right', flex: 1 }}>{user.userId || '-'}</span>
-                      </li>
-                    ))
-                  )}
-                </ul>
               </div>
-            )}
+              <button 
+                className="clear-button"
+                onClick={() => {
+                  setSearchTerm("");
+                  setSearchCategory("");
+                }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="15" y1="9" x2="9" y2="15"></line>
+                  <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+                CLEAR ALL
+              </button>
+            </div>
         </div>
-      )}
-      {loading ? (
-        <div>Loading users...</div>
-      ) : (
-        <>
-          <h2>New Registrations</h2>
-          <table className="it-users-table">
+
+          {/* Data Table */}
+          <div className="table-card">
+            <div className="table-container">
+              <table className="data-table">
             <thead>
-              <tr>
-                <th style={{ width: '15%' }}>Name</th>
-                <th style={{ width: '22%' }}>Email</th>
-                <th style={{ width: '13%', textAlign: 'left', paddingLeft: 8 }}>Role</th>
-                <th style={{ width: '13%' }}>Status</th>
-                <th style={{ width: '18%' }}>Actions</th>
+                  <tr className="table-header">
+                    <th className="th-cell">ID</th>
+                    <th className="th-cell">USER NAME</th>
+                    <th className="th-cell">EMAIL</th>
+                    <th className="th-cell">ROLE</th>
+                    <th className="th-cell">STATUS</th>
+                    <th className="th-cell th-actions">ACTIONS</th>
               </tr>
             </thead>
-            <tbody>
+                <tbody id="tableBody">
+                  {/* New Registrations */}
               {pendingUsers.map((user) => (
-                <tr key={user.id} className="pending">
-                  <td style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 180 }}>{user.name || "-"}</td>
-                  <td style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 260 }}>{user.email || "-"}</td>
-                  <td style={{ width: '13%', textAlign: 'left', paddingLeft: 8 }}>
+                    <tr key={user.id} className="table-row pending">
+                      <td className="td-cell td-id">{user.userId || "-"}</td>
+                      <td className="td-cell td-name">{user.name || "-"}</td>
+                      <td className="td-cell td-email">{user.email || "-"}</td>
+                      <td className="td-cell td-role">
                     {user.role && user.role !== 'role' ? (
                       <span style={{ textTransform: 'capitalize', fontWeight: 500 }}>
                         {user.role}
@@ -581,167 +475,135 @@ const IT = () => {
                       </div>
                     )}
                   </td>
-                  <td style={{ fontWeight: 700, color: '#b8860b', fontSize: '0.75rem' }}>Pending</td>
-                  <td style={{ padding: '0.1rem 0.2rem', margin: 0 }}>
+                      <td className="td-cell td-status">
+                        <span style={{ color: '#facc15', fontWeight: 700 }}>PENDING</span>
+                      </td>
+                      <td className="td-cell td-actions">
+                        <div className="action-buttons">
                     <button
-                      className="approve-btn"
+                            className="action-btn btn-approve"
                       onClick={() => handleApprovePending(user.id)}
                       disabled={!pendingRoles[user.id]}
-                      style={{ marginRight: '0.1rem' }}
                     >
-                      Approve
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M20 6L9 17l-5-5"></path>
+                            </svg>
+                            APPROVE
                     </button>
                     <button
-                      className="reject-btn"
+                            className="action-btn btn-view"
                       onClick={() => handleReject(user.id)}
                     >
-                      Reject
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M18 6L6 18M6 6l12 12"></path>
+                            </svg>
+                            REJECT
                     </button>
+                        </div>
                   </td>
                 </tr>
               ))}
-            </tbody>
-          </table>
-          <div style={{ fontSize: '0.9em', marginTop: '0.3em', color: '#ffffff' }}>
-            Total New Registrations: {pendingUsers.length}
-          </div>
-
-          <h2>Admins</h2>
-          <table className="it-users-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Approved Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+                  
+                  {/* Admins */}
               {sortedAdminUsers.map((user) => (
-                <tr
-                  key={user.id}
-                  id={`user-row-${user.id}`}
-                  className={user.approved === false ? "rejected" : user.approved ? "approved" : "pending"}
-                  style={highlightedRowId === user.id ? { background: '#ffe082', transition: 'background 0.5s' } : {}}
-                >
-                  <td>{user.userId || "-"}</td>
-                  <td>{user.name || "-"}</td>
-                  <td>{user.email || "-"}</td>
-                  <td>{user.role || "admin"}</td>
-                  <td>
-                    {user.approved === true ? (
-                      <span style={{ color: '#1c6954', fontWeight: 700 }}>Approved</span>
-                    ) : user.approved === false ? (
-                      'Rejected'
-                    ) : (
-                      'Pending'
-                    )}
+                    <tr key={user.id} className="table-row approved" id={`user-row-${user.id}`}>
+                      <td className="td-cell td-id">{user.userId || "-"}</td>
+                      <td className="td-cell td-name">{user.name || "-"}</td>
+                      <td className="td-cell td-email">{user.email || "-"}</td>
+                      <td className="td-cell td-role">{user.role || "admin"}</td>
+                      <td className="td-cell td-status">
+                        <span style={{ color: '#22c55e', fontWeight: 700 }}>APPROVED</span>
                   </td>
-                  <td>{user.createdAt ? formatDateTime(user.createdAt) : "-"}</td>
-                  <td style={{ padding: '0.1rem 0.2rem', margin: 0 }}>
+                      <td className="td-cell td-actions">
+                        <div className="action-buttons">
                     <button
-                      className="remove-btn"
+                            className="action-btn btn-view"
                       onClick={() => handleRemove(user.id)}
                     >
-                      Remove
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            REMOVE
                     </button>
+                        </div>
                   </td>
                 </tr>
               ))}
-            </tbody>
-          </table>
-          <div style={{ fontSize: '0.9em', marginTop: '0.3em', color: '#ffffff' }}>
-            Total Admins: {sortedAdminUsers.length}
-          </div>
-
-          <h2>Drivers</h2>
-          <table className="it-users-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Approved Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+                  
+                  {/* Drivers */}
               {sortedDriverUsers.map((user) => (
-                <tr
-                  key={user.id}
-                  id={`user-row-${user.id}`}
-                  className={user.approved === false ? "rejected" : user.approved ? "approved" : "pending"}
-                  style={highlightedRowId === user.id ? { background: '#ffe082', transition: 'background 0.5s' } : {}}
-                >
-                  <td>{user.userId || "-"}</td>
-                  <td>{user.name || "-"}</td>
-                  <td>{user.email || "-"}</td>
-                  <td>{user.role || "driver"}</td>
-                  <td>
-                    {user.approved === true ? (
-                      <span style={{ color: '#1c6954', fontWeight: 700 }}>Approved</span>
-                    ) : user.approved === false ? (
-                      'Rejected'
-                    ) : (
-                      'Pending'
-                    )}
+                    <tr key={user.id} className="table-row approved" id={`user-row-${user.id}`}>
+                      <td className="td-cell td-id">{user.userId || "-"}</td>
+                      <td className="td-cell td-name">{user.name || "-"}</td>
+                      <td className="td-cell td-email">{user.email || "-"}</td>
+                      <td className="td-cell td-role">{user.role || "driver"}</td>
+                      <td className="td-cell td-status">
+                        <span style={{ color: '#22c55e', fontWeight: 700 }}>APPROVED</span>
                   </td>
-                  <td>{user.createdAt ? formatDateTime(user.createdAt) : "-"}</td>
-                  <td style={{ padding: '0.1rem 0.2rem', margin: 0 }}>
+                      <td className="td-cell td-actions">
+                        <div className="action-buttons">
                     <button
-                      className="remove-btn"
+                            className="action-btn btn-view"
                       onClick={() => handleRemove(user.id)}
                     >
-                      Remove
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            REMOVE
                     </button>
+                        </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <div style={{ fontSize: '0.9em', marginTop: '0.3em', color: '#ffffff' }}>
-            Total Drivers: {sortedDriverUsers.length}
+            </div>
           </div>
 
-          <div style={{ fontWeight: 'bold', fontSize: '1em', marginTop: '1.5em', textAlign: 'right', color: '#000000' }}>
-            Total Registered Users: {sortedAdminUsers.length + sortedDriverUsers.length}
+          {/* Stats - At Bottom */}
+          <div className="stats-grid">
+            <div className="stat-card stat-blue">
+              <p className="stat-number">{totalUsers}</p>
+              <p className="stat-label">TOTAL USERS</p>
+              <div className="stat-bar stat-bar-blue"></div>
+            </div>
+
+            <div className="stat-card stat-cyan">
+              <p className="stat-number">{sortedDriverUsers.length}</p>
+              <p className="stat-label">TOTAL DRIVERS</p>
+              <div className="stat-bar stat-bar-cyan"></div>
+            </div>
+
+            <div className="stat-card stat-yellow">
+              <p className="stat-number">{pendingCount}</p>
+              <p className="stat-label">PENDING</p>
+              <div className="stat-bar stat-bar-yellow"></div>
+            </div>
+
+            <div className="stat-card stat-green">
+              <p className="stat-number">{sortedAdminUsers.length}</p>
+              <p className="stat-label">TOTAL ADMINS</p>
+              <div className="stat-bar stat-bar-green"></div>
+            </div>
           </div>
           
-          <div style={{ textAlign: 'center', marginTop: '30px', padding: '20px', borderTop: '2px solid #eee' }}>
+          {/* View Removed Users Button */}
+          <div style={{ textAlign: 'center', marginTop: '30px', padding: '20px', borderTop: '2px solid #374151' }}>
             <button
-              className="resigned-btn"
+              className="action-btn btn-view"
               onClick={() => navigate('/resignated')}
               style={{
                 padding: '12px 24px',
-                backgroundColor: '#dc3545',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
                 fontSize: '16px',
                 fontWeight: 'bold',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
                 transition: 'all 0.3s ease'
               }}
-              onMouseOver={(e) => {
-                e.target.style.backgroundColor = '#c82333';
-                e.target.style.transform = 'translateY(-2px)';
-              }}
-              onMouseOut={(e) => {
-                e.target.style.backgroundColor = '#dc3545';
-                e.target.style.transform = 'translateY(0)';
-              }}
             >
               View Removed Users
             </button>
           </div>
-        </>
-      )}
+        </div>
       
       {/* Custom Confirmation Modal */}
       {showModal && (
@@ -774,6 +636,7 @@ const IT = () => {
           {successMessage}
         </div>
       )}
+      </div>
     </div>
   );
 };

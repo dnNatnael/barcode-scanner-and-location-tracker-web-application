@@ -164,314 +164,315 @@ const Resignated = () => {
   };
 
   return (
-    <div style={{ width: '100%', maxWidth: '100%', margin: '40px auto 0 auto', padding: '0' }}>
-      <button
-        onClick={() => navigate(-1)}
-        style={{
-          position: 'absolute',
-          top: 20,
-          left: 20,
-          padding: '0.18em 0.7em',
-          fontSize: '0.85em',
-          borderRadius: '8px',
-          border: 'none',
-          background: 'linear-gradient(90deg, #1c6954 0%, #23a393 100%)',
-          color: '#fff',
-          fontWeight: 700,
-          cursor: 'pointer',
-          boxShadow: '0 2px 8px rgba(44, 62, 80, 0.10)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          transition: 'all 0.2s',
-        }}
-        onMouseOver={e => {
-          e.currentTarget.style.background = 'linear-gradient(90deg, #155c47 0%, #1c6954 100%)';
-          e.currentTarget.style.transform = 'scale(1.06)';
-        }}
-        onMouseOut={e => {
-          e.currentTarget.style.background = 'linear-gradient(90deg, #1c6954 0%, #23a393 100%)';
-          e.currentTarget.style.transform = 'scale(1)';
-        }}
-      >
-        <span style={{ fontSize: '1em', marginRight: 3 }}>&larr;</span> <span style={{ fontSize: '0.95em' }}>Back</span>
-      </button>
-      <h1 style={{ textAlign: 'center' }}>Removed Users</h1>
-      {/* Search Bar and Category Toggle */}
-      <div style={{ marginBottom: '1.5em', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1em' }}>
-        <input
-          type="text"
-          placeholder={searchCategory ? "Search users by name..." : "First select role"}
-          value={searchTerm}
-          onFocus={() => searchCategory && setSearchActive(true)}
-          onChange={e => {
-            if (searchCategory) {
-              setSearchTerm(e.target.value);
-              setSearchActive(true);
-            }
-          }}
-          disabled={!searchCategory}
-          ref={searchInputRef}
-          style={{
-            width: '40%', // reduced from 60%
-            maxWidth: 250, // reduced from 400
-            padding: '0.4em 0.8em', // reduced padding
-            fontSize: '0.95em', // reduced font size
-            borderRadius: '6px', // slightly smaller
-            border: '1px solid #bfc9d9',
-            marginBottom: '0.3em',
-            outline: 'none',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-            background: !searchCategory ? '#f3f3f3' : undefined,
-            color: !searchCategory ? '#aaa' : undefined,
-            cursor: !searchCategory ? 'not-allowed' : undefined,
-          }}
-        />
-        {searchTerm && searchCategory && (
+    <div className="retro-wave-page">
+      <div className="container">
+        {/* Retro Grid Background */}
+        <div className="grid-background"></div>
+
+        {/* Geometric Shapes */}
+        <div className="shape shape-1"></div>
+        <div className="shape shape-2"></div>
+        <div className="shape shape-3"></div>
+        <div className="shape shape-4"></div>
+
+        <div className="content">
+          {/* Header */}
+          <div className="header-card">
+            <div className="header-content">
+              <div className="title-section">
+                <h1 className="main-title">Removed Users</h1>
+              </div>
+            </div>
+          </div>
+
+          {/* Back Button */}
           <button
-            onClick={() => setSearchTerm("")}
+            onClick={() => navigate(-1)}
+            className="action-btn btn-view"
             style={{
-              marginLeft: 8,
-              padding: '0.3em 0.7em', // reduced
-              fontSize: '0.9em', // reduced
-              borderRadius: '5px',
+              position: 'absolute',
+              top: 20,
+              left: 20,
+              padding: '0.18em 0.7em',
+              fontSize: '0.85em',
+              borderRadius: '8px',
               border: 'none',
-              background: '#eee',
+              background: 'linear-gradient(90deg, #1c6954 0%, #23a393 100%)',
+              color: '#fff',
+              fontWeight: 700,
               cursor: 'pointer',
-              color: '#333'
-            }}
-          >
-            Clear
-          </button>
-        )}
-        {/* Category Toggle Buttons */}
-        <div style={{ display: 'flex', gap: '0.5em', marginLeft: 16 }}>
-          <button
-            ref={adminsBtnRef}
-            onClick={() => {
-              setSearchCategory('admins');
-              setSearchTerm("");
-              setTimeout(() => {
-                if (searchInputRef.current) searchInputRef.current.focus();
-              }, 0);
-            }}
-            style={{
-              padding: '0.3em 0.8em', // reduced
-              borderRadius: '5px',
-              border: searchCategory === 'admins' ? '2px solid #457b9d' : '1px solid #bfc9d9',
-              background: searchCategory === 'admins' ? '#e9f0fa' : '#f8fafc',
-              color: searchCategory === 'admins' ? '#1d3557' : '#333',
-              fontWeight: searchCategory === 'admins' ? 700 : 500,
-              cursor: 'pointer',
-              fontSize: '0.95em', // reduced
+              boxShadow: '0 2px 8px rgba(44, 62, 80, 0.10)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
               transition: 'all 0.2s',
             }}
-          >
-            Admins
-          </button>
-          <button
-            ref={driversBtnRef}
-            onClick={() => {
-              setSearchCategory('drivers');
-              setSearchTerm("");
-              setTimeout(() => {
-                if (searchInputRef.current) searchInputRef.current.focus();
-              }, 0);
+            onMouseOver={e => {
+              e.currentTarget.style.background = 'linear-gradient(90deg, #155c47 0%, #1c6954 100%)';
+              e.currentTarget.style.transform = 'scale(1.06)';
             }}
-            style={{
-              padding: '0.3em 0.8em', // reduced
-              borderRadius: '5px',
-              border: searchCategory === 'drivers' ? '2px solid #457b9d' : '1px solid #bfc9d9',
-              background: searchCategory === 'drivers' ? '#e9f0fa' : '#f8fafc',
-              color: searchCategory === 'drivers' ? '#1d3557' : '#333',
-              fontWeight: searchCategory === 'drivers' ? 700 : 500,
-              cursor: 'pointer',
-              fontSize: '0.95em', // reduced
-              transition: 'all 0.2s',
+            onMouseOut={e => {
+              e.currentTarget.style.background = 'linear-gradient(90deg, #1c6954 0%, #23a393 100%)';
+              e.currentTarget.style.transform = 'scale(1)';
             }}
           >
-            Drivers
+            <span style={{ fontSize: '1em', marginRight: 3 }}>&larr;</span> <span style={{ fontSize: '0.95em' }}>Back</span>
           </button>
-        </div>
-      </div>
-      {searchActive && searchTerm && searchCategory && (
-        <div ref={searchResultsRef} style={{ marginBottom: '2em', display: 'flex', justifyContent: 'center' }}>
-          {searchCategory === 'admins' && (
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{
-                width: '100%',
-                maxWidth: 800,
-                background: '#1c6954', // highlight color
-                color: '#fff', // white text
-                borderRadius: '8px',
-                padding: '0.3em 0',
-                marginBottom: 6,
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                fontWeight: 700,
-                fontSize: '1.05em',
-                letterSpacing: '0.5px',
-                border: 'none',
-                boxShadow: 'none',
-              }}>
-                <span style={{ textAlign: 'center', width: '100%' }}>Admins</span>
+
+          {/* Filters */}
+          <div className="filter-card">
+            <div className="filter-grid">
+              <div className="filter-input">
+                <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input 
+                  type="text" 
+                  placeholder="SEARCH USERS..." 
+                  className="search-field"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    if (searchCategory) {
+                      setSearchTerm(e.target.value);
+                      setSearchActive(true);
+                    }
+                  }}
+                  onFocus={() => searchCategory && setSearchActive(true)}
+                  disabled={!searchCategory}
+                  ref={searchInputRef}
+                />
               </div>
-              <ul style={{ listStyle: 'none', padding: 0, minHeight: 32, width: '100%', maxWidth: 800 }}>
-                {filteredAdminsSorted.length === 0 ? (
-                  <li style={{ color: '#888', fontStyle: 'italic' }}>No matching admins found.</li>
-                ) : (
-                  filteredAdminsSorted.map(user => (
-                    <li
-                      key={user.id}
-                      style={{
-                        padding: '4px 0',
-                        borderBottom: '1px solid #eee',
-                        display: 'flex',
-                        width: '100%',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        fontSize: '0.6rem', // was 0.7rem
-                        cursor: 'pointer',
-                        transition: 'background 0.2s',
-                      }}
-                      onClick={() => handleResultClick(user.userId, 'admin')}
-                      title={`Go to ${user.name} in table`}
-                    >
-                      <span style={{ fontWeight: 500, textAlign: 'left', flex: 1 }}>{user.name}</span>
-                      <span style={{ color: '#888', fontSize: '0.7rem', textAlign: 'right', flex: 1 }}>{user.userId || '-'}</span>
-                    </li>
-                  ))
-                )}
-              </ul>
+
+              <div className="filter-select">
+                <select className="select-field select-blue" value={searchCategory} onChange={(e) => setSearchCategory(e.target.value)}>
+                  <option value="">SEARCH IN: ALL</option>
+                  <option value="admins">SEARCH IN: ADMINS</option>
+                  <option value="drivers">SEARCH IN: DRIVERS</option>
+                </select>
+              </div>
+
+              <div className="filter-select">
+                <select className="select-field select-indigo">
+                  <option value="all">ROLE: ALL</option>
+                  <option value="admin">ROLE: ADMIN</option>
+                  <option value="driver">ROLE: DRIVER</option>
+                </select>
+              </div>
+
+              <div className="filter-select">
+                <select className="select-field select-sky">
+                  <option value="all">STATUS: ALL</option>
+                  <option value="removed">STATUS: REMOVED</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="filter-summary">
+              <div className="active-filters">
+                <span>◄ FILTERS ACTIVE ►</span>
+                <div id="filterBadges">
+                  {searchTerm && <span className="filter-badge">SEARCH: {searchTerm}</span>}
+                  {searchCategory && <span className="filter-badge">CATEGORY: {searchCategory.toUpperCase()}</span>}
+                </div>
+              </div>
+              <button 
+                className="clear-button"
+                onClick={() => {
+                  setSearchTerm("");
+                  setSearchCategory("");
+                }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="15" y1="9" x2="9" y2="15"></line>
+                  <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+                CLEAR ALL
+              </button>
+            </div>
+          </div>
+
+          {searchActive && searchTerm && searchCategory && (
+            <div ref={searchResultsRef} style={{ marginBottom: '2em', display: 'flex', justifyContent: 'center' }}>
+              {searchCategory === 'admins' && (
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div style={{
+                    width: '100%',
+                    maxWidth: 800,
+                    background: '#1c6954', // highlight color
+                    color: '#fff', // white text
+                    borderRadius: '8px',
+                    padding: '0.3em 0',
+                    marginBottom: 6,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    fontWeight: 700,
+                    fontSize: '1.05em',
+                    letterSpacing: '0.5px',
+                    border: 'none',
+                    boxShadow: 'none',
+                  }}>
+                    <span style={{ textAlign: 'center', width: '100%' }}>Admins</span>
+                  </div>
+                  <ul style={{ listStyle: 'none', padding: 0, minHeight: 32, width: '100%', maxWidth: 800 }}>
+                    {filteredAdminsSorted.length === 0 ? (
+                      <li style={{ color: '#888', fontStyle: 'italic' }}>No matching admins found.</li>
+                    ) : (
+                      filteredAdminsSorted.map(user => (
+                        <li
+                          key={user.id}
+                          style={{
+                            padding: '4px 0',
+                            borderBottom: '1px solid #eee',
+                            display: 'flex',
+                            width: '100%',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            fontSize: '0.6rem', // was 0.7rem
+                            cursor: 'pointer',
+                            transition: 'background 0.2s',
+                          }}
+                          onClick={() => handleResultClick(user.userId, 'admin')}
+                          title={`Go to ${user.name} in table`}
+                        >
+                          <span style={{ fontWeight: 500, textAlign: 'left', flex: 1 }}>{user.name}</span>
+                          <span style={{ color: '#888', fontSize: '0.7rem', textAlign: 'right', flex: 1 }}>{user.userId || '-'}</span>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                </div>
+              )}
+              {searchCategory === 'drivers' && (
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div style={{
+                    width: '100%',
+                    maxWidth: 800,
+                    background: '#1c6954', // highlight color
+                    color: '#fff', // white text
+                    borderRadius: '8px',
+                    padding: '0.3em 0',
+                    marginBottom: 6,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    fontWeight: 700,
+                    fontSize: '1.05em',
+                    letterSpacing: '0.5px',
+                    border: 'none',
+                    boxShadow: 'none',
+                  }}>
+                    <span style={{ textAlign: 'center', width: '100%' }}>Drivers</span>
+                  </div>
+                  <ul style={{ listStyle: 'none', padding: 0, minHeight: 32, width: '100%', maxWidth: 800 }}>
+                    {filteredDriversSorted.length === 0 ? (
+                      <li style={{ color: '#888', fontStyle: 'italic' }}>No matching drivers found.</li>
+                    ) : (
+                      filteredDriversSorted.map(user => (
+                        <li
+                          key={user.id}
+                          style={{
+                            padding: '4px 0',
+                            borderBottom: '1px solid #eee',
+                            display: 'flex',
+                            width: '100%',
+                            alignItems: 'center',
+                            fontSize: '0.6rem', // was 0.7rem
+                            cursor: 'pointer',
+                            transition: 'background 0.2s',
+                            justifyContent: 'space-between',
+                          }}
+                          onClick={() => handleResultClick(user.userId, 'driver')}
+                          title={`Go to ${user.name} in table`}
+                        >
+                          <span style={{ fontWeight: 500, textAlign: 'left', flex: 1, fontSize: '0.7rem' }}>{user.name}</span>
+                          <span style={{ color: '#888', fontSize: '0.7rem', textAlign: 'right', flex: 1 }}>{user.userId || '-'}</span>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
-          {searchCategory === 'drivers' && (
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{
-                width: '100%',
-                maxWidth: 800,
-                background: '#1c6954', // highlight color
-                color: '#fff', // white text
-                borderRadius: '8px',
-                padding: '0.3em 0',
-                marginBottom: 6,
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                fontWeight: 700,
-                fontSize: '1.05em',
-                letterSpacing: '0.5px',
-                border: 'none',
-                boxShadow: 'none',
-              }}>
-                <span style={{ textAlign: 'center', width: '100%' }}>Drivers</span>
-              </div>
-              <ul style={{ listStyle: 'none', padding: 0, minHeight: 32, width: '100%', maxWidth: 800 }}>
-                {filteredDriversSorted.length === 0 ? (
-                  <li style={{ color: '#888', fontStyle: 'italic' }}>No matching drivers found.</li>
-                ) : (
-                  filteredDriversSorted.map(user => (
-                    <li
-                      key={user.id}
-                      style={{
-                        padding: '4px 0',
-                        borderBottom: '1px solid #eee',
-                        display: 'flex',
-                        width: '100%',
-                        alignItems: 'center',
-                        fontSize: '0.6rem', // was 0.7rem
-                        cursor: 'pointer',
-                        transition: 'background 0.2s',
-                        justifyContent: 'space-between',
-                      }}
-                      onClick={() => handleResultClick(user.userId, 'driver')}
-                      title={`Go to ${user.name} in table`}
-                    >
-                      <span style={{ fontWeight: 500, textAlign: 'left', flex: 1, fontSize: '0.7rem' }}>{user.name}</span>
-                      <span style={{ color: '#888', fontSize: '0.7rem', textAlign: 'right', flex: 1 }}>{user.userId || '-'}</span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </div>
-          )}
+          <h2>Admins</h2>
+          <table className="resignated-users-table">
+            <thead>
+              <tr>
+                <th onClick={() => handleAdminSort("userId")}>ID</th>
+                <th onClick={() => handleAdminSort("name")}>Name</th>
+                <th onClick={() => handleAdminSort("email")}>Email</th>
+                <th onClick={() => handleAdminSort("role")}>Role</th>
+                <th onClick={() => handleAdminSort("joinedAt")}>Joined Date</th>
+                <th onClick={() => handleAdminSort("removedAt")}>Removed Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedAdminUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', color: '#888' }}>
+                    No removed admins found.
+                  </td>
+                </tr>
+              ) : (
+                sortedAdminUsers.map((user) => (
+                  <tr key={user.id} className={`removed${highlightedRowId === `admin-row-${user.userId}` ? ' highlighted' : ''}`} id={`admin-row-${user.userId}`}>
+                    <td>{user.userId || "-"}</td>
+                    <td>{user.name || "-"}</td>
+                    <td>{user.email || "-"}</td>
+                    <td>{user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "-"}</td>
+                    <td>{user.joinedAt ? formatDate(user.joinedAt) : "-"}</td>
+                    <td>{user.removedAt ? formatDate(user.removedAt) : "-"}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+          <div style={{ fontSize: '0.8em', marginTop: '0.5em', color: '#ffffff', textAlign: 'left' }}>
+            Total Removed Admins: {sortedAdminUsers.length}
+          </div>
+          <h2>Drivers</h2>
+          <table className="resignated-users-table">
+            <thead>
+              <tr>
+                <th onClick={() => handleDriverSort("userId")}>ID</th>
+                <th onClick={() => handleDriverSort("name")}>Name</th>
+                <th onClick={() => handleDriverSort("email")}>Email</th>
+                <th onClick={() => handleDriverSort("role")}>Role</th>
+                <th onClick={() => handleDriverSort("joinedAt")}>Joined Date</th>
+                <th onClick={() => handleDriverSort("removedAt")}>Removed Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedDriverUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', color: '#888' }}>
+                    No removed drivers found.
+                  </td>
+                </tr>
+              ) : (
+                sortedDriverUsers.map((user) => (
+                  <tr key={user.id} className={`removed${highlightedRowId === `driver-row-${user.userId}` ? ' highlighted' : ''}`} id={`driver-row-${user.userId}`}>
+                    <td>{user.userId || "-"}</td>
+                    <td>{user.name || "-"}</td>
+                    <td>{user.email || "-"}</td>
+                    <td>{user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "-"}</td>
+                    <td>{user.joinedAt ? formatDate(user.joinedAt) : "-"}</td>
+                    <td>{user.removedAt ? formatDate(user.removedAt) : "-"}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+          <div style={{ fontSize: '0.8em', marginTop: '0.5em', color: '#ffffff', textAlign: 'left' }}>
+            Total Removed Drivers: {sortedDriverUsers.length}
+          </div>
+          <div style={{ fontSize: '0.9em', marginTop: '1em', color: '#000000', textAlign: 'right', fontWeight: 700 }}>
+            Total Removed Users: {sortedAdminUsers.length + sortedDriverUsers.length}
+          </div>
         </div>
-      )}
-      <h2>Admins</h2>
-      <table className="resignated-users-table">
-        <thead>
-          <tr>
-            <th onClick={() => handleAdminSort("userId")}>ID</th>
-            <th onClick={() => handleAdminSort("name")}>Name</th>
-            <th onClick={() => handleAdminSort("email")}>Email</th>
-            <th onClick={() => handleAdminSort("role")}>Role</th>
-            <th onClick={() => handleAdminSort("joinedAt")}>Joined Date</th>
-            <th onClick={() => handleAdminSort("removedAt")}>Removed Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortedAdminUsers.length === 0 ? (
-            <tr>
-              <td colSpan={6} style={{ textAlign: 'center', color: '#888' }}>
-                No removed admins found.
-              </td>
-            </tr>
-          ) : (
-            sortedAdminUsers.map((user) => (
-              <tr key={user.id} className={`removed${highlightedRowId === `admin-row-${user.userId}` ? ' highlighted' : ''}`} id={`admin-row-${user.userId}`}>
-                <td>{user.userId || "-"}</td>
-                <td>{user.name || "-"}</td>
-                <td>{user.email || "-"}</td>
-                <td>{user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "-"}</td>
-                <td>{user.joinedAt ? formatDate(user.joinedAt) : "-"}</td>
-                <td>{user.removedAt ? formatDate(user.removedAt) : "-"}</td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-      <div style={{ fontSize: '0.8em', marginTop: '0.5em', color: '#ffffff', textAlign: 'left' }}>
-        Total Removed Admins: {sortedAdminUsers.length}
-      </div>
-      <h2>Drivers</h2>
-      <table className="resignated-users-table">
-        <thead>
-          <tr>
-            <th onClick={() => handleDriverSort("userId")}>ID</th>
-            <th onClick={() => handleDriverSort("name")}>Name</th>
-            <th onClick={() => handleDriverSort("email")}>Email</th>
-            <th onClick={() => handleDriverSort("role")}>Role</th>
-            <th onClick={() => handleDriverSort("joinedAt")}>Joined Date</th>
-            <th onClick={() => handleDriverSort("removedAt")}>Removed Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortedDriverUsers.length === 0 ? (
-            <tr>
-              <td colSpan={6} style={{ textAlign: 'center', color: '#888' }}>
-                No removed drivers found.
-              </td>
-            </tr>
-          ) : (
-            sortedDriverUsers.map((user) => (
-              <tr key={user.id} className={`removed${highlightedRowId === `driver-row-${user.userId}` ? ' highlighted' : ''}`} id={`driver-row-${user.userId}`}>
-                <td>{user.userId || "-"}</td>
-                <td>{user.name || "-"}</td>
-                <td>{user.email || "-"}</td>
-                <td>{user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "-"}</td>
-                <td>{user.joinedAt ? formatDate(user.joinedAt) : "-"}</td>
-                <td>{user.removedAt ? formatDate(user.removedAt) : "-"}</td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-      <div style={{ fontSize: '0.8em', marginTop: '0.5em', color: '#ffffff', textAlign: 'left' }}>
-        Total Removed Drivers: {sortedDriverUsers.length}
-      </div>
-      <div style={{ fontSize: '0.9em', marginTop: '1em', color: '#000000', textAlign: 'right', fontWeight: 700 }}>
-        Total Removed Users: {sortedAdminUsers.length + sortedDriverUsers.length}
       </div>
     </div>
   );

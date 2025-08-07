@@ -1,464 +1,1136 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Retro Wave Styling - Only for IT and Resignated pages */
+.retro-wave-page {
+    font-family: 'Courier New', monospace;
+    min-height: 100vh;
+    background: linear-gradient(to bottom, #1e3a8a, #312e81, #1e3a8a);
+    position: relative;
+    overflow-x: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 0;
+}
+
+/* Container - Only for IT and Resignated pages */
+.retro-wave-page .container {
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+    width: 100vw;
+    max-width: 100vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+    padding: 24px 5vw;
+}
+
+/* Retro Grid Background - Only for IT and Resignated pages */
+.retro-wave-page .grid-background {
+    position: absolute;
+    inset: 0;
+    opacity: 0.2;
+    background-image: 
+        linear-gradient(rgba(0, 150, 255, 0.3) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 150, 255, 0.3) 1px, transparent 1px),
+        linear-gradient(rgba(0, 255, 255, 0.2) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 255, 0.2) 1px, transparent 1px);
+    background-size: 80px 80px, 80px 80px, 20px 20px, 20px 20px;
+}
+
+/* Geometric Shapes - Only for IT and Resignated pages */
+.retro-wave-page .shape {
+    position: absolute;
+    opacity: 0.3;
+    z-index: 1;
+}
+
+.retro-wave-page .shape-1 {
+    top: 80px;
+    left: 80px;
+    width: 128px;
+    height: 128px;
+    border: 2px solid #60a5fa;
+    transform: rotate(45deg);
+}
+
+.retro-wave-page .shape-2 {
+    bottom: 128px;
+    right: 128px;
+    width: 96px;
+    height: 96px;
+    border: 2px solid #22d3ee;
+    border-radius: 50%;
+    opacity: 0.4;
+}
+
+.retro-wave-page .shape-3 {
+    top: 50%;
+    right: 80px;
+    width: 64px;
+    height: 64px;
+    background-color: #60a5fa;
+    transform: rotate(45deg);
+}
+
+.retro-wave-page .shape-4 {
+    bottom: 80px;
+    left: 25%;
+    width: 80px;
+    height: 80px;
+    border: 2px solid #0ea5e9;
+}
+
+/* Content - Only for IT and Resignated pages */
+.retro-wave-page .content {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+}
+
+/* Header Card - Only for IT and Resignated pages */
+.retro-wave-page .header-card {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    border: 2px solid #3b82f6;
+    border-radius: 8px;
+    margin-bottom: 0;
+}
+
+.retro-wave-page .header-content {
+    text-align: center;
+    padding: 32px;
+    background: linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(34, 211, 238, 0.1));
+    border-bottom: 2px solid #3b82f6;
+}
+
+.retro-wave-page .main-title {
+    font-size: clamp(32px, 8vw, 64px);
+    font-weight: bold;
+    background: linear-gradient(to right, #60a5fa, #a78bfa, #22d3ee);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 8px;
+    letter-spacing: 0.1em;
+}
+
+/* Filter Card - Only for IT and Resignated pages */
+.retro-wave-page .filter-card {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    border: 2px solid #22d3ee;
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 0;
+}
+
+.retro-wave-page .filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+    width: 100%;
+}
+
+.retro-wave-page .filter-input {
+    position: relative;
+    width: 100%;
+}
+
+.retro-wave-page .search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 20px;
+    width: 20px;
+    color: #22d3ee;
+}
+
+.retro-wave-page .search-field {
+    width: 100%;
+    padding-left: 48px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid #22d3ee;
+    color: #67e8f9;
+    height: 48px;
+    letter-spacing: 0.1em;
+    border-radius: 4px;
+}
+
+.retro-wave-page .search-field::placeholder {
+    color: #0891b2;
+}
+
+.retro-wave-page .search-field:focus {
+    outline: none;
+    border-color: #ec4899;
+    box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.2);
+}
+
+.retro-wave-page .filter-select {
+    position: relative;
+    width: 100%;
+}
+
+.retro-wave-page .select-field {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid;
+    height: 48px;
+    letter-spacing: 0.1em;
+    padding: 0 16px;
+    appearance: none;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.retro-wave-page .select-blue {
+    border-color: #60a5fa;
+    color: #93c5fd;
+}
+
+.retro-wave-page .select-indigo {
+    border-color: #a78bfa;
+    color: #c4b5fd;
+}
+
+.retro-wave-page .select-sky {
+    border-color: #0ea5e9;
+    color: #7dd3fc;
+}
+
+.retro-wave-page .select-field:focus {
+    outline: none;
+    border-color: #ec4899;
+    box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.2);
+}
+
+.retro-wave-page .select-field option {
+    background: black;
+}
+
+.retro-wave-page .filter-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #374151;
+    width: 100%;
+}
+
+.retro-wave-page .active-filters {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: #67e8f9;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    flex-wrap: wrap;
+}
+
+.retro-wave-page #filterBadges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.retro-wave-page .filter-badge {
+    background: rgba(34, 211, 238, 0.2);
+    color: #67e8f9;
+    border: 1px solid #22d3ee;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: background-color 0.3s;
+    white-space: nowrap;
+}
+
+.retro-wave-page .clear-button {
+    background: rgba(0, 0, 0, 0.3);
+    color: #f9a8d4;
+    border: 1px solid #ec4899;
+    padding: 8px 16px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+    white-space: nowrap;
+}
+
+.retro-wave-page .clear-button:hover {
+    background: rgba(55, 65, 81, 0.3);
+}
+
+.retro-wave-page .clear-button svg {
+    height: 16px;
+    width: 16px;
+}
+
+/* Table Card - Only for IT and Resignated pages */
+.retro-wave-page .table-card {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    border: 2px solid #3b82f6;
+    border-radius: 8px;
+    margin-bottom: 0;
+    display: flex;
+    justify-content: center;
+    overflow: visible;
+}
+
+.retro-wave-page .table-container {
+    width: 100%;
+    overflow-x: auto;
+    display: flex;
+    justify-content: center;
+    overflow-y: visible;
+}
+
+.retro-wave-page .data-table {
+    width: 100%;
+    min-width: 800px;
+    max-width: 100%;
+    border-collapse: collapse;
+    overflow: visible;
+}
+
+.retro-wave-page .table-header {
+    background: linear-gradient(to right, rgba(59, 130, 246, 0.2), rgba(34, 211, 238, 0.2));
+    border-bottom: 2px solid #3b82f6;
+}
+
+.retro-wave-page .th-cell {
+    font-weight: bold;
+    color: #93c5fd;
+    padding: 16px 24px;
+    letter-spacing: 0.1em;
+    text-align: left;
+    white-space: nowrap;
+    font-family: 'Roboto', sans-serif;
+}
+
+.retro-wave-page .th-actions {
+    text-align: right;
+    padding-right: 24px;
+}
+
+.retro-wave-page .table-row {
+    border-bottom: 1px solid #374151;
+    transition: background-color 0.2s;
+    overflow: visible;
+}
+
+.retro-wave-page .table-row:hover {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.retro-wave-page .td-cell {
+    padding: 16px 24px;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: ellipsis;
+    max-width: 200px;
+    font-family: 'Roboto', sans-serif;
+}
+
+.retro-wave-page .td-id {
+    font-weight: bold;
+    color: #93c5fd;
+    max-width: 120px;
+    font-family: 'Roboto', sans-serif;
+}
+
+.retro-wave-page .td-name {
+    font-weight: bold;
+    color: white;
+    font-size: 18px;
+    letter-spacing: 0.05em;
+    max-width: 250px;
+    font-family: 'Roboto', sans-serif;
+}
+
+.retro-wave-page .td-email {
+    color: #93c5fd;
+    letter-spacing: 0.05em;
+    max-width: 300px;
+    font-family: 'Roboto', sans-serif;
+}
+
+.retro-wave-page .td-role {
+    color: #93c5fd;
+    letter-spacing: 0.05em;
+    max-width: 100px;
+    font-family: 'Roboto', sans-serif;
+    position: relative;
+    overflow: visible;
+}
+
+.retro-wave-page .td-status {
+    color: #93c5fd;
+    letter-spacing: 0.05em;
+    max-width: 120px;
+    font-family: 'Roboto', sans-serif;
+}
+
+.retro-wave-page .td-actions {
+    text-align: right;
+    padding-right: 24px;
+    max-width: 200px;
+}
+
+.retro-wave-page .action-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    flex-wrap: wrap;
+}
+
+.retro-wave-page .table-row:hover .action-buttons {
+    opacity: 1;
+}
+
+.retro-wave-page .action-btn {
+    padding: 6px 16px;
+    border: 1px solid;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    border-radius: 4px;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.retro-wave-page .btn-approve {
+    background: linear-gradient(to right, #22c55e, #10b981);
+    color: white;
+    border-color: #22c55e;
+}
+
+.retro-wave-page .btn-approve:hover {
+    background: linear-gradient(to right, #16a34a, #059669);
+}
+
+.retro-wave-page .btn-edit {
+    background: rgba(0, 0, 0, 0.3);
+    color: #67e8f9;
+    border-color: #22d3ee;
+}
+
+.retro-wave-page .btn-edit:hover {
+    background: rgba(55, 65, 81, 0.3);
+}
+
+.retro-wave-page .btn-view {
+    background: rgba(0, 0, 0, 0.3);
+    color: #f9a8d4;
+    border-color: #ec4899;
+}
+
+.retro-wave-page .btn-view:hover {
+    background: rgba(55, 65, 81, 0.3);
+}
+
+.retro-wave-page .action-btn svg {
+    height: 16px;
+    width: 16px;
+}
+
+/* Stats Grid - Only for IT and Resignated pages */
+.retro-wave-page .stats-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 24px;
+    margin-top: 0;
+}
+
+.retro-wave-page .stat-card {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    border: 2px solid;
+    border-radius: 8px;
+    padding: 24px;
+    text-align: center;
+    transition: border-color 0.3s;
+}
+
+.retro-wave-page .stat-blue { border-color: #3b82f6; }
+.retro-wave-page .stat-cyan { border-color: #22d3ee; }
+.retro-wave-page .stat-yellow { border-color: #facc15; }
+.retro-wave-page .stat-green { border-color: #22c55e; }
+
+.retro-wave-page .stat-blue:hover { border-color: #60a5fa; }
+.retro-wave-page .stat-cyan:hover { border-color: #67e8f9; }
+.retro-wave-page .stat-yellow:hover { border-color: #fde047; }
+.retro-wave-page .stat-green:hover { border-color: #4ade80; }
+
+.retro-wave-page .stat-number {
+    font-size: clamp(32px, 6vw, 48px);
+    font-weight: bold;
+    color: white;
+    margin-bottom: 8px;
+}
+
+.retro-wave-page .stat-label {
+    color: #93c5fd;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+}
+
+.retro-wave-page .stat-bar {
+    height: 4px;
+    margin-top: 8px;
+}
+
+.retro-wave-page .stat-bar-blue { background-color: #3b82f6; }
+.retro-wave-page .stat-bar-cyan { background-color: #22d3ee; }
+.retro-wave-page .stat-bar-yellow { background-color: #facc15; }
+.retro-wave-page .stat-bar-green { background-color: #22c55e; }
+
+/* Legacy Table Styles for IT and Resignated pages only */
+.retro-wave-page .it-users-table, 
+.retro-wave-page .resignated-users-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    border: 2px solid #3b82f6;
+    border-radius: 8px;
+    overflow: visible;
+    font-size: 0.7rem;
+    table-layout: fixed;
+}
+
+.retro-wave-page .it-users-table th, 
+.retro-wave-page .it-users-table td,
+.retro-wave-page .resignated-users-table th, 
+.retro-wave-page .resignated-users-table td {
+    padding: 0.32rem 0.5rem;
+    text-align: left;
+    font-size: 0.7rem;
+    vertical-align: middle;
+    height: 2.2rem;
+    color: #93c5fd;
+    font-family: 'Roboto', sans-serif;
+}
+
+.retro-wave-page .it-users-table th, 
+.retro-wave-page .resignated-users-table th {
+    background: linear-gradient(to right, rgba(59, 130, 246, 0.2), rgba(34, 211, 238, 0.2));
+    color: #93c5fd;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-align: left;
+    border-bottom: 2px solid #3b82f6;
+    font-family: 'Roboto', sans-serif;
+}
+
+.retro-wave-page .it-users-table tr, 
+.retro-wave-page .resignated-users-table tr {
+    border-bottom: 1px solid #374151;
+    transition: background-color 0.2s;
+}
+
+.retro-wave-page .it-users-table tr:hover, 
+.retro-wave-page .resignated-users-table tr:hover {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.retro-wave-page .it-users-table tr.approved, 
+.retro-wave-page .resignated-users-table tr.approved {
+    background: rgba(34, 197, 94, 0.1);
+}
+.retro-wave-page .it-users-table tr.rejected, 
+.retro-wave-page .resignated-users-table tr.rejected {
+    background: rgba(239, 68, 68, 0.1);
+}
+.retro-wave-page .it-users-table tr.pending, 
+.retro-wave-page .resignated-users-table tr.pending {
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.retro-wave-page .approve-btn, 
+.retro-wave-page .reject-btn, 
+.retro-wave-page .remove-btn {
+    border: none;
+    border-radius: 0.3rem;
+    padding: 0.18rem 0.55rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-right: 0.2rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    letter-spacing: 0.1em;
+}
+
+.retro-wave-page .approve-btn {
+    background: linear-gradient(to right, #22c55e, #10b981);
+    color: #fff;
+    border: 1px solid #22c55e;
+}
+
+.retro-wave-page .approve-btn:disabled {
+    background: rgba(34, 197, 94, 0.3);
+    color: #fff;
+    cursor: not-allowed;
+}
+
+.retro-wave-page .reject-btn {
+    background: linear-gradient(to right, #ef4444, #dc2626);
+    color: #fff;
+    border: 1px solid #ef4444;
+}
+
+.retro-wave-page .reject-btn:disabled {
+    background: rgba(239, 68, 68, 0.3);
+    color: #fff;
+    cursor: not-allowed;
+}
+
+.retro-wave-page .remove-btn {
+    background: rgba(0, 0, 0, 0.3);
+    color: #f9a8d4;
+    border: 1px solid #ec4899;
+    margin-left: 0.3rem;
+}
+
+.retro-wave-page .remove-btn:hover {
+    background: rgba(55, 65, 81, 0.3);
+}
+
+/* Custom Modal Styles - Only for IT and Resignated pages */
+.retro-wave-page .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    backdrop-filter: blur(8px);
+}
+
+.retro-wave-page .modal-content {
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(8px);
+    padding: 2rem;
+    border-radius: 8px;
+    border: 2px solid #3b82f6;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    color: #93c5fd;
+}
+
+.retro-wave-page .modal-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #60a5fa;
+    margin-bottom: 1rem;
+    letter-spacing: 0.1em;
+}
+
+.retro-wave-page .modal-message {
+    font-size: 1rem;
+    color: #93c5fd;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+    letter-spacing: 0.05em;
+}
+
+.retro-wave-page .modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.retro-wave-page .modal-btn {
+    padding: 0.5rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.1em;
+}
+
+.retro-wave-page .modal-btn-cancel {
+    background: rgba(0, 0, 0, 0.3);
+    color: #67e8f9;
+    border: 1px solid #22d3ee;
+}
+
+.retro-wave-page .modal-btn-cancel:hover {
+    background: rgba(55, 65, 81, 0.3);
+}
+
+.retro-wave-page .modal-btn-confirm {
+    background: linear-gradient(to right, #ef4444, #dc2626);
+    color: white;
+    border: 1px solid #ef4444;
+}
+
+.retro-wave-page .modal-btn-confirm:hover {
+    background: linear-gradient(to right, #dc2626, #b91c1c);
+}
+
+/* Success Message Styles - Only for IT and Resignated pages */
+.retro-wave-page .success-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(8px);
+    color: #22c55e;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    border: 2px solid #22c55e;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-weight: 600;
+    font-size: 0.9rem;
+    z-index: 10001;
+    animation: slideIn 0.3s ease-out;
+    letter-spacing: 0.1em;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Responsive Design - Only for IT and Resignated pages */
+@media (max-width: 1200px) {
+    .retro-wave-page .container {
+        padding: 16px 4vw;
+    }
+    
+    .retro-wave-page .content {
+        max-width: 100%;
+    }
+    
+    .retro-wave-page .data-table {
+        min-width: 600px;
+    }
+}
+
+@media (max-width: 768px) {
+    .retro-wave-page .container {
+        padding: 12px 3vw;
+    }
+    
+    .retro-wave-page .content {
+        gap: 24px;
+    }
+    
+    .retro-wave-page .header-content {
+        padding: 24px 16px;
+    }
+    
+    .retro-wave-page .filter-card {
+        padding: 16px;
+    }
+    
+    .retro-wave-page .filter-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .retro-wave-page .filter-summary {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .retro-wave-page .active-filters {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .retro-wave-page .data-table {
+        min-width: 500px;
+    }
+    
+    .retro-wave-page .th-cell, 
+    .retro-wave-page .td-cell {
+        padding: 12px 16px;
+    }
+    
+    .retro-wave-page .action-buttons {
+        opacity: 1;
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .retro-wave-page .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .retro-wave-page .stat-card {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .retro-wave-page .container {
+        padding: 8px 2vw;
+    }
+    
+    .retro-wave-page .content {
+        gap: 16px;
+    }
+    
+    .retro-wave-page .header-content {
+        padding: 16px 12px;
+    }
+    
+    .retro-wave-page .filter-card {
+        padding: 12px;
+    }
+    
+    .retro-wave-page .data-table {
+        min-width: 400px;
+    }
+    
+    .retro-wave-page .th-cell, 
+    .retro-wave-page .td-cell {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    
+    .retro-wave-page .action-btn {
+        padding: 4px 12px;
+        font-size: 10px;
+    }
+    
+    .retro-wave-page .action-btn svg {
+        height: 14px;
+        width: 14px;
+    }
+    
+    .retro-wave-page .stat-number {
+        font-size: 32px;
+    }
+    
+    .retro-wave-page .stat-label {
+        font-size: 12px;
+    }
+}
+
+/* Original IT.css styles for backward compatibility - these will only apply to pages that don't use retro-wave-page class */
 .it-container {
-  max-width: 900px;
-  margin: 2rem auto;
-  padding: 1.2rem;
-  background: #fff;
-  border-radius: 1.5rem;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 1.2rem;
+    background: #fff;
+    border-radius: 1.5rem;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
 }
 
 .it-container h1 {
-  text-align: center;
-  margin-bottom: 2rem;
-  color: #1d3557;
-  font-size: 1.05rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #1d3557;
+    font-size: 1.05rem;
 }
 
 .it-container h2 {
-  font-size: 0.8rem;
+    font-size: 0.8rem;
 }
 
+/* Original table styles for other pages */
 .it-users-table, .resignated-users-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #f8fafc;
-  border-radius: 1rem;
-  overflow: visible;
-  font-size: 0.7rem;
-  table-layout: fixed;
+    width: 100%;
+    border-collapse: collapse;
+    background: #f8fafc;
+    border-radius: 1rem;
+    overflow: visible;
+    font-size: 0.7rem;
+    table-layout: fixed;
 }
 
 .it-users-table th, .it-users-table td,
 .resignated-users-table th, .resignated-users-table td {
-  padding: 0.32rem 0.5rem;
-  text-align: left;
-  font-size: 0.7rem;
-  vertical-align: middle;
-  height: 2.2rem;
+    padding: 0.32rem 0.5rem;
+    text-align: left;
+    font-size: 0.7rem;
+    vertical-align: middle;
+    height: 2.2rem;
 }
 
 .it-users-table th, .resignated-users-table th {
-  background: #e0e7ef;
-  color: #22223b;
-  font-weight: 700;
-  font-size: 0.75rem;
-  text-align: left;
-}
-
-.it-users-table td, .resignated-users-table td {
-  text-align: left;
-  position: relative;
-  overflow: visible;
-}
-
-.it-users-table th:nth-child(1), .resignated-users-table th:nth-child(1),
-.it-users-table td:nth-child(1), .resignated-users-table td:nth-child(1) {
-  width: 13%;
-}
-.it-users-table th:nth-child(2), .resignated-users-table th:nth-child(2),
-.it-users-table td:nth-child(2), .resignated-users-table td:nth-child(2) {
-  width: 17%;
-}
-.it-users-table th:nth-child(3), .resignated-users-table th:nth-child(3),
-.it-users-table td:nth-child(3), .resignated-users-table td:nth-child(3) {
-  width: 22%;
-}
-.it-users-table th:nth-child(4), .resignated-users-table th:nth-child(4),
-.it-users-table td:nth-child(4), .resignated-users-table td:nth-child(4) {
-  width: 10%;
-  overflow: visible;
-  position: relative;
-}
-.it-users-table th:nth-child(5), .resignated-users-table th:nth-child(5),
-.it-users-table td:nth-child(5), .resignated-users-table td:nth-child(5) {
-  width: 13%;
-}
-.it-users-table th:nth-child(6), .resignated-users-table th:nth-child(6),
-.it-users-table td:nth-child(6), .resignated-users-table td:nth-child(6) {
-  width: 15%;
-}
-.it-users-table th:nth-child(7), .resignated-users-table th:nth-child(7),
-.it-users-table td:nth-child(7), .resignated-users-table td:nth-child(7) {
-  width: 10%;
-  padding: 0.1rem 0.2rem !important;
-  margin: 0 !important;
+    background: #e0e7ef;
+    color: #22223b;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-align: left;
 }
 
 .it-users-table tr, .resignated-users-table tr {
-  border-bottom: 1px solid #e0e7ef;
+    border-bottom: 1px solid #e0e7ef;
 }
 
 .it-users-table tr:last-child, .resignated-users-table tr:last-child {
-  border-bottom: none;
+    border-bottom: none;
 }
 
 .it-users-table tr.approved, .resignated-users-table tr.approved {
-  background: #e6ffe6;
+    background: #e6ffe6;
 }
 .it-users-table tr.rejected, .resignated-users-table tr.rejected {
-  background: #ffe6e6;
+    background: #ffe6e6;
 }
 .it-users-table tr.pending, .resignated-users-table tr.pending {
-  background: #fffbe6;
+    background: #fffbe6;
 }
 
 .approve-btn, .reject-btn, .remove-btn {
-  border: none;
-  border-radius: 0.3rem;
-  padding: 0.18rem 0.55rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  margin-right: 0.2rem;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+    border: none;
+    border-radius: 0.3rem;
+    padding: 0.18rem 0.55rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-right: 0.2rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
 }
 
 .approve-btn {
-  background: #1d72fa;
-  color: #fff;
+    background: #1d72fa;
+    color: #fff;
 }
 .approve-btn:disabled {
-  background: #b3d1ff;
-  color: #fff;
-  cursor: not-allowed;
+    background: #b3d1ff;
+    color: #fff;
+    cursor: not-allowed;
 }
 
 .reject-btn {
-  background: #fa1d1d;
-  color: #fff;
+    background: #fa1d1d;
+    color: #fff;
 }
 .reject-btn:disabled {
-  background: #ffb3b3;
-  color: #fff;
-  cursor: not-allowed;
+    background: #ffb3b3;
+    color: #fff;
+    cursor: not-allowed;
 }
 
 .remove-btn {
-  background: #888;
-  color: #fff;
-  margin-left: 0.3rem;
+    background: #888;
+    color: #fff;
+    margin-left: 0.3rem;
 }
 .remove-btn:hover {
-  background: #333;
+    background: #333;
 }
 
-/* Animated Reject Button Styles */
-.noselect {
-  width: 150px;
-  height: 50px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  background: red;
-  border: none;
-  border-radius: 5px;
-  box-shadow: 1px 1px 3px rgba(0,0,0,0.15);
-  background: #e62222;
-  position: relative;
-}
-
-.noselect, .noselect span {
-  transition: 200ms;
-}
-
-.noselect .text {
-  transform: translateX(35px);
-  color: white;
-  font-weight: bold;
-}
-
-.noselect .icon {
-  position: absolute;
-  border-left: 1px solid #c41b1b;
-  transform: translateX(110px);
-  height: 40px;
-  width: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.noselect svg {
-  width: 15px;
-  fill: #eee;
-}
-
-.noselect:hover {
-  background: #ff3636;
-}
-
-.noselect:hover .text {
-  color: transparent;
-}
-
-.noselect:hover .icon {
-  width: 150px;
-  border-left: none;
-  transform: translateX(0);
-}
-
-.noselect:focus {
-  outline: none;
-}
-
-.noselect:active .icon svg {
-  transform: scale(0.8);
-}
-
-select {
-  border-radius: 1rem;
-  padding: 0.12rem 0.35rem;
-  border: 1px solid #e0e7ef;
-  font-size: 0.7rem;
-  background: #fff;
-}
-
-select.role-select {
-  border-radius: 9999px !important;
-  padding: 0.18rem 0.8rem !important;
-  font-size: 0.58rem !important;
-  font-weight: 500;
-  border: 1px solid #bfc9d9;
-  background: #f8fafc;
-  height: 1.7rem;
-  outline: none;
-  transition: border 0.2s;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  box-shadow: none;
-}
-
-select.role-select:focus {
-  border: 1.5px solid #1d72fa;
-  background: #eaf2fb;
-}
-
-select.role-select option {
-  border-radius: 9999px;
-  padding: 0.3rem 1.2rem;
-  font-size: 0.65rem;
-  background: #fff;
-  color: #22223b;
-  margin: 0.1rem 0;
-}
-
-/* Custom Role Selector Styles */
+/* Custom Role Selector Styles - Updated for Retro Wave Theme */
 .paste-button {
-  position: relative;
-  display: inline-block;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  width: fit-content;
+    position: relative;
+    display: inline-block;
+    font-family: 'Roboto', sans-serif;
+    width: 100%;
+    max-width: 120px;
 }
 
 .button {
-  background-color: #1d72fa;
-  color: #ffffff;
-  padding: 4px 12px;
-  font-size: 13px;
-  font-weight: bold;
-  border: 2px solid transparent;
-  border-radius: 15px;
-  cursor: pointer;
-  width: 100%;
-  box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.3);
+    color: #93c5fd;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #3b82f6;
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+    letter-spacing: 0.05em;
+    position: relative;
+}
+
+.button:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #60a5fa;
+    color: #60a5fa;
 }
 
 .dropdown-content {
-  display: none;
-  font-size: 13px;
-  position: absolute;
-  z-index: 9999;
-  min-width: 120px;
-  background-color: #212121;
-  border: 2px solid #1d72fa;
-  border-radius: 0px 15px 15px 15px;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-  top: 100%;
-  left: 0;
-  margin-top: 2px;
-  overflow: hidden;
+    display: none;
+    font-size: 12px;
+    position: absolute;
+    z-index: 99999;
+    min-width: 120px;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(8px);
+    border: 2px solid #3b82f6;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 0;
 }
 
 .dropdown-content a {
-  color: #1d72fa;
-  padding: 6px 8px;
-  text-decoration: none;
-  display: block;
-  transition: 0.1s;
-  margin: 0;
-  border: none;
+    color: #93c5fd;
+    padding: 8px 12px;
+    text-decoration: none;
+    display: block;
+    transition: all 0.2s ease;
+    margin: 0;
+    border: none;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.dropdown-content a:last-child {
+    border-bottom: none;
 }
 
 .dropdown-content a:hover {
-  background-color: #1d72fa;
-  color: #ffffff;
+    background: rgba(59, 130, 246, 0.3);
+    color: #60a5fa;
 }
 
 .dropdown-content a:focus {
-  background-color: #212121;
-  color: #1d72fa;
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
 }
 
-.dropdown-content #top:hover {
-  border-radius: 0px 13px 0px 0px;
-  margin: 0;
-  padding: 6px 8px;
+.dropdown-content a:first-child:hover {
+    border-radius: 0;
 }
 
-.dropdown-content #middle:hover {
-  border-radius: 0px;
-  margin: 0;
-  padding: 6px 8px;
+.dropdown-content a:last-child:hover {
+    border-radius: 0 0 4px 4px;
 }
 
-.dropdown-content #bottom:hover {
-  border-radius: 0px 0px 13px 13px;
-  margin: 0;
-  padding: 6px 8px;
-}
 
-.paste-button:hover button {
-  border-radius: 15px 15px 0px 0px;
-  background-color: #1557c7;
-}
+
+
 
 .paste-button:hover .dropdown-content {
-  display: block;
+    display: block;
+    z-index: 99999;
+}
+
+.paste-button:hover .button {
+    border-radius: 4px 4px 0 0;
+    border-bottom: none;
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #60a5fa;
+    color: #60a5fa;
+}
+
+/* Ensure dropdown is visible in table context */
+.retro-wave-page .td-role {
+    position: relative;
+    overflow: visible;
+}
+
+.retro-wave-page .paste-button {
+    position: relative;
+    z-index: 1000;
+}
+
+.retro-wave-page .dropdown-content {
+    z-index: 99999;
+}
+
+/* Ensure table structure doesn't clip dropdown */
+.retro-wave-page .data-table tbody {
+    position: relative;
+}
+
+.retro-wave-page .data-table tbody tr {
+    position: relative;
+}
+
+/* Force dropdown to appear above all table elements */
+.retro-wave-page .paste-button:hover {
+    z-index: 100000;
+}
+
+.retro-wave-page .paste-button:hover .dropdown-content {
+    z-index: 100001;
 }
 
 .it-users-table tbody tr {
-  border-bottom: 1px solid #e0e7ef;
-  margin-bottom: 6px;
-  display: table-row;
-  overflow: visible;
+    border-bottom: 1px solid #e0e7ef;
+    margin-bottom: 6px;
+    display: table-row;
+    overflow: visible;
 }
 
 .it-users-table tbody tr:not(:last-child) {
-  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
 }
 
 .it-users-table tbody {
-  border-spacing: 0 6px;
-  display: table-row-group;
+    border-spacing: 0 6px;
+    display: table-row-group;
 }
 
 @media (max-width: 700px) {
-  .it-container {
-    padding: 0.7rem;
-  }
-  .it-users-table th, .it-users-table td,
-  .resignated-users-table th, .resignated-users-table td {
-    padding: 0.18rem 0.2rem;
-    font-size: 0.6rem;
-    height: 1.5rem;
-  }
-  .it-container h1 {
-    font-size: 0.8rem;
-  }
-  .it-container h2 {
-    font-size: 0.7rem;
-  }
-  .approve-btn, .reject-btn, .remove-btn, select {
-    font-size: 0.6rem;
-  }
-}
-
-/* Custom Modal Styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10000;
-}
-
-.modal-content {
-  background: white;
-  padding: 2rem;
-  border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  max-width: 400px;
-  width: 90%;
-  text-align: center;
-}
-
-.modal-title {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 1rem;
-}
-
-.modal-message {
-  font-size: 1rem;
-  color: #666;
-  margin-bottom: 1.5rem;
-  line-height: 1.5;
-}
-
-.modal-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-}
-
-.modal-btn {
-  padding: 0.5rem 1.5rem;
-  border: none;
-  border-radius: 5px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.modal-btn-cancel {
-  background-color: #6c757d;
-  color: white;
-}
-
-.modal-btn-cancel:hover {
-  background-color: #5a6268;
-}
-
-.modal-btn-confirm {
-  background-color: #dc3545;
-  color: white;
-}
-
-.modal-btn-confirm:hover {
-  background-color: #c82333;
-}
-
-/* Success Message Styles */
-.success-message {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background-color: #28a745;
-  color: white;
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  font-weight: 600;
-  font-size: 0.9rem;
-  z-index: 10001;
-  animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+    .it-container {
+        padding: 0.7rem;
+    }
+    .it-users-table th, .it-users-table td,
+    .resignated-users-table th, .resignated-users-table td {
+        padding: 0.18rem 0.2rem;
+        font-size: 0.6rem;
+        height: 1.5rem;
+    }
+    .it-container h1 {
+        font-size: 0.8rem;
+    }
+    .it-container h2 {
+        font-size: 0.7rem;
+    }
+    .approve-btn, .reject-btn, .remove-btn, select {
+        font-size: 0.6rem;
+    }
 }

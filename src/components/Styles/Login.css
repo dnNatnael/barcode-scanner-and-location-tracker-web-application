@@ -58,7 +58,7 @@ body {
   flex-direction: column;
   gap: 4px;
   width: 320px;
-  padding: 10px 20px;
+  padding: 60px 20px;
   border-radius: 20px;
   position: relative;
   background-color: rgba(26,26,26,0.5);
@@ -158,8 +158,8 @@ body {
   border: 1px solid rgba(105, 105, 105, 0.397);
   border-radius: 10px;
   text-align: left;
-  max-width: 92.5%;
-  margin-right: auto;
+  max-width: 100%;
+  margin-right: 0;
   margin-bottom: 5px;
   font-size: 0.95rem;
 }

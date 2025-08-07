@@ -28,6 +28,7 @@
   padding: 0.32rem;
   text-align: left;
   font-size: 0.7rem;
+  font-family: 'Roboto', sans-serif;
 }
 
 .resignated-users-table th {
@@ -35,6 +36,7 @@
   color: #22223b;
   font-weight: 700;
   font-size: 0.75rem;
+  font-family: 'Roboto', sans-serif;
 }
 
 .resignated-users-table tr {
