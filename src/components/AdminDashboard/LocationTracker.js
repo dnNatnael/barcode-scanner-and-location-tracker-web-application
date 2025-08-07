@@ -532,7 +532,7 @@ const LocationTracker = () => {
                     <td>
                       <button
                         style={{ padding: '0.4em 1.1em', background: '#457b9d', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: '0.98em' }}
-                        onClick={() => navigate('/driver-sample-scan', { state: { driverId: driver.userId, driverName: driver.name, isAdminAccess: true } })}
+                        onClick={() => navigate('/driver-view', { state: { driverId: driver.userId, driverName: driver.name, isAdminAccess: true } })}
                       >
                         Sample
                       </button>

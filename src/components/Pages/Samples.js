@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { db } from "../../firebase";
-import { collection, onSnapshot, query, orderBy, getDocs, updateDoc, doc } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy, getDocs, updateDoc, doc, deleteDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import "../Styles/Samples.css";
 
@@ -170,6 +170,48 @@ const Samples = () => {
     } catch (error) {
       console.error("Error approving samples:", error);
       alert("Error approving samples. Please try again.");
+    }
+  };
+
+  // Delete all samples in a barcode group
+  const handleDelete = async (group) => {
+    if (!window.confirm(`Are you sure you want to permanently delete all ${group.samples.length} samples for barcode ${group.barcode}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      // Delete all samples in the group
+      const deletePromises = group.samples.map(sample => {
+        if (sample._docId) {
+          const sampleRef = doc(db, "samples", sample._docId);
+          return deleteDoc(sampleRef);
+        }
+        return Promise.resolve();
+      });
+      
+      await Promise.all(deletePromises);
+      alert(`All ${group.samples.length} samples for barcode ${group.barcode} have been permanently deleted!`);
+    } catch (error) {
+      console.error("Error deleting samples:", error);
+      alert("Error deleting samples. Please try again.");
+    }
+  };
+
+  // Delete individual sample
+  const handleDeleteSample = async (sample) => {
+    if (!window.confirm(`Are you sure you want to permanently delete sample ${sample.SID}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      if (sample._docId) {
+        const sampleRef = doc(db, "samples", sample._docId);
+        await deleteDoc(sampleRef);
+        alert(`Sample ${sample.SID} has been permanently deleted!`);
+      }
+    } catch (error) {
+      console.error("Error deleting sample:", error);
+      alert("Error deleting sample. Please try again.");
     }
   };
 
@@ -417,6 +459,7 @@ const Samples = () => {
                     )}
                   </td>
                   <td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
                     <button
                       onClick={() => !group.allApproved && handleApprove(group)}
                       className={group.allApproved ? "btn-approve-all disabled" : "btn-approve-all"}
@@ -496,13 +539,43 @@ const Samples = () => {
                         <span></span>
                       </div>
                     </button>
+                      <button
+                        onClick={() => handleDelete(group)}
+                        className="btn-delete"
+                        style={{
+                          padding: '0.2em 0.4em',
+                          fontSize: '0.9em',
+                          background: 'linear-gradient(to right, #dc3545, #c82333)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontWeight: '600',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseOver={e => {
+                          e.currentTarget.style.background = 'linear-gradient(to right, #c82333, #bd2130)';
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                        }}
+                        onMouseOut={e => {
+                          e.currentTarget.style.background = 'linear-gradient(to right, #dc3545, #c82333)';
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                      >
+                        <span style={{ fontSize: '1.1em' }}>❌</span>
+                        <span>Clear</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
                 
                 {/* Expandable sub-samples */}
                 {activeBarcode === group.barcode && group.samples.length > 0 && (
                   <tr>
-                    <td colSpan={4} style={{ padding: 0, border: 'none' }}>
+                    <td colSpan={8} style={{ padding: 0, border: 'none' }}>
                       <div style={{
                         background: '#C8C4E1',
                         padding: '0',
@@ -576,6 +649,7 @@ const Samples = () => {
                                   )}
                                 </td>
                                 <td style={{ padding: '0.5rem', fontSize: '12.5px', textAlign: 'center' }}>
+                                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
                                   <button
                                     onClick={() => {
                                       if (!sample.arrivedDate?.toDate && sample._docId) {
@@ -609,6 +683,36 @@ const Samples = () => {
                                       <span></span>
                                     </div>
                                   </button>
+                                    <button
+                                      onClick={() => handleDeleteSample(sample)}
+                                      className="btn-delete"
+                                      style={{
+                                        padding: '0.2em 0.4em',
+                                        fontSize: '0.9em',
+                                        background: 'linear-gradient(to right, #dc3545, #c82333)',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '4px',
+                                        cursor: 'pointer',
+                                        fontWeight: '600',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        transition: 'all 0.2s'
+                                      }}
+                                      onMouseOver={e => {
+                                        e.currentTarget.style.background = 'linear-gradient(to right, #c82333, #bd2130)';
+                                        e.currentTarget.style.transform = 'scale(1.05)';
+                                      }}
+                                      onMouseOut={e => {
+                                        e.currentTarget.style.background = 'linear-gradient(to right, #dc3545, #c82333)';
+                                        e.currentTarget.style.transform = 'scale(1)';
+                                      }}
+                                    >
+                                      <span style={{ fontSize: '1.1em' }}>❌</span>
+                                      <span>Clear</span>
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}

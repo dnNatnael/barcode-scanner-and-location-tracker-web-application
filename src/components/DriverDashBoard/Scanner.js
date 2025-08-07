@@ -698,7 +698,7 @@ const Scanner = () => {
         onMouseOut={e => e.currentTarget.style.background = '#00BFFF'}
         onClick={() => {
           if (stopCameraRef.current) stopCameraRef.current();
-          navigate('/driver-sample-scan', { state: { driverName, driverId, isDriverAccess: true } });
+          navigate('/driver-view', { state: { driverName, driverId, isDriverAccess: true } });
         }}
       >
         View collected samples
