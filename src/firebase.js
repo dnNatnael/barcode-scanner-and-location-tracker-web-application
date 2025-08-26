@@ -5,13 +5,13 @@ import { getFirestore } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyA8l4UZel-WTnftJJxH6S1sZ5GUJ4JlrcA",
-  authDomain: "barcode-app-61c52.firebaseapp.com",
-  projectId: "barcode-app-61c52",
-  storageBucket: "barcode-app-61c52.firebasestorage.app",
-  messagingSenderId: "995865908540",
-  appId: "1:995865908540:web:63b18b22bad649aa9cfa39",
-  measurementId: "G-1W3C0P1R4M"
+  apiKey: "AIzaSyBcHiaq3aEwoo3ujLlYnTyrZ0aclhOz_co",
+  authDomain: "barcode-app-f3e64.firebaseapp.com",
+  projectId: "barcode-app-f3e64",
+  storageBucket: "barcode-app-f3e64.firebasestorage.app",
+  messagingSenderId: "430924750441",
+  appId: "1:430924750441:web:44bdcf31750a22ff9c4cf8",
+  measurementId: "G-G2NRHN85PK"
 };
 
 // Initialize Firebase

@@ -75,6 +75,55 @@ function SamplesTable({ driverName, driverId }) {
   const [resolvedDriverId, setResolvedDriverId] = useState(driverId);
   const [expandedBarcodes, setExpandedBarcodes] = useState(new Set());
   const [activeBarcode, setActiveBarcode] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTitle, setConfirmTitle] = useState("");
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmAction, setConfirmAction] = useState(null);
+
+  // Simple confirmation dialog component
+  const ConfirmationDialog = ({ open, title, message, onConfirm, onCancel }) => {
+    if (!open) return null;
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ background: '#fff', borderRadius: 12, width: '90%', maxWidth: 460, boxShadow: '0 12px 28px rgba(0,0,0,0.18)', overflow: 'hidden' }}>
+          <div style={{ padding: '18px 20px', borderBottom: '1px solid #eee' }}>
+            <div style={{ fontSize: '1.15em', fontWeight: 700, color: '#102542' }}>{title}</div>
+          </div>
+          <div style={{ padding: '16px 20px', color: '#333', lineHeight: 1.5 }}>{message}</div>
+          <div style={{ padding: '14px 16px', display: 'flex', gap: 10, justifyContent: 'flex-end', background: '#fafafa', borderTop: '1px solid #eee' }}>
+            <button
+              onClick={onCancel}
+              style={{
+                padding: '10px 16px',
+                borderRadius: 8,
+                border: '2px solid #1c6954',
+                background: '#fff',
+                color: '#1c6954',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              style={{
+                padding: '10px 16px',
+                borderRadius: 8,
+                border: 'none',
+                background: '#1c6954',
+                color: '#fff',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // Function to find driver ID by name
   const findDriverIdByName = async (name) => {
@@ -124,18 +173,18 @@ function SamplesTable({ driverName, driverId }) {
           setResolvedDriverId(driverId);
         }
 
-    // Fetch all drivers and build a map of userId -> name
+        // Fetch all drivers and build a map of userId -> name
         driverUnsubscribe = onSnapshot(
           collection(db, 'driver'), 
           (snap) => {
             if (!isActive) return;
             try {
-      const map = {};
-      snap.docs.forEach(doc => {
-        const d = doc.data();
-        if (d.userId && d.name) map[d.userId] = d.name;
-      });
-      setDriverMap(map);
+              const map = {};
+              snap.docs.forEach(doc => {
+                const d = doc.data();
+                if (d.userId && d.name) map[d.userId] = d.name;
+              });
+              setDriverMap(map);
             } catch (err) {
               console.error("Error processing driver data:", err);
               setError("Error loading driver data");
@@ -151,21 +200,21 @@ function SamplesTable({ driverName, driverId }) {
         if (!isActive) return;
 
         // Setup samples listener with better error handling
-    let q;
+        let q;
         try {
           if (effectiveDriverId && effectiveDriverId !== "Unknown" && effectiveDriverId.trim() !== "") {
             console.log("Filtering samples for driverId:", effectiveDriverId);
-      // Filter by current driver's ID
-      q = query(
-        collection(db, "samples"), 
+            // Filter by current driver's ID
+            q = query(
+              collection(db, "samples"), 
               where("driver", "==", effectiveDriverId),
-        orderBy("date", "desc")
-      );
-    } else {
+              orderBy("date", "desc")
+            );
+          } else {
             console.log("Loading all samples (no driverId filter)");
-      // Fallback to all samples if no driver ID
-              q = query(collection(db, "samples"), orderBy("date", "desc"));
-    }
+            // Fallback to all samples if no driver ID
+            q = query(collection(db, "samples"), orderBy("date", "desc"));
+          }
         } catch (queryError) {
           console.error("Error creating query:", queryError);
           // Fallback to simple query without filters but maintain sort order
@@ -375,181 +424,188 @@ function SamplesTable({ driverName, driverId }) {
     );
   }
 
-  // Approve arrival for all samples in a barcode group
-  const handleApprove = async (group) => {
-    try {
-      // Approve all samples in the group
-      const updatePromises = group.samples.map(sample => {
-        if (sample._docId) {
-          const sampleRef = doc(db, "samples", sample._docId);
-          return updateDoc(sampleRef, { arrivedDate: new Date() });
-        }
-        return Promise.resolve();
-      });
-      
-      await Promise.all(updatePromises);
-      alert(`All ${group.samples.length} samples for barcode ${group.barcode} have been approved!`);
-    } catch (error) {
-      console.error("Error approving samples:", error);
-      alert("Error approving samples. Please try again.");
-    }
+  // Show confirm and perform an action on confirm
+  const openConfirm = (title, message, action) => {
+    setConfirmTitle(title);
+    setConfirmMessage(message);
+    setConfirmAction(() => action);
+    setConfirmOpen(true);
   };
 
   // Delete all samples in a barcode group
   const handleDelete = async (group) => {
-    if (!window.confirm(`Are you sure you want to permanently delete all ${group.samples.length} samples for barcode ${group.barcode}? This action cannot be undone.`)) {
-      return;
-    }
-
-    try {
-      // Delete all samples in the group
-      const deletePromises = group.samples.map(sample => {
-        if (sample._docId) {
-          const sampleRef = doc(db, "samples", sample._docId);
-          return deleteDoc(sampleRef);
+    openConfirm(
+      'Confirm Deletion',
+      `Are you sure you want to delete all ${group.samples.length} samples for barcode ${group.barcode}? This action is permanent and cannot be undone.`,
+      async () => {
+        try {
+          const deletePromises = group.samples.map(sample => {
+            if (sample._docId) {
+              const sampleRef = doc(db, "samples", sample._docId);
+              return deleteDoc(sampleRef);
+            }
+            return Promise.resolve();
+          });
+          await Promise.all(deletePromises);
+        } catch (error) {
+          console.error("Error deleting samples:", error);
+          alert("Error deleting samples. Please try again.");
+        } finally {
+          setConfirmOpen(false);
         }
-        return Promise.resolve();
-      });
-      
-      await Promise.all(deletePromises);
-      alert(`All ${group.samples.length} samples for barcode ${group.barcode} have been permanently deleted!`);
-    } catch (error) {
-      console.error("Error deleting samples:", error);
-      alert("Error deleting samples. Please try again.");
-    }
+      }
+    );
   };
 
   // Delete individual sample
-  const handleDeleteSample = async (sample) => {
-    if (!window.confirm(`Are you sure you want to permanently delete sample ${sample.SID}? This action cannot be undone.`)) {
-      return;
-    }
-
-    try {
-      if (sample._docId) {
-        const sampleRef = doc(db, "samples", sample._docId);
-        await deleteDoc(sampleRef);
-        alert(`Sample ${sample.SID} has been permanently deleted!`);
+  const handleDeleteSample = async (sample, barcode) => {
+    openConfirm(
+      'Confirm Deletion',
+      `Are you sure you want to delete sample ${sample.SID} for barcode ${barcode}? This action is permanent and cannot be undone.`,
+      async () => {
+        try {
+          if (sample._docId) {
+            const sampleRef = doc(db, "samples", sample._docId);
+            await deleteDoc(sampleRef);
+          }
+        } catch (error) {
+          console.error("Error deleting sample:", error);
+          alert("Error deleting sample. Please try again.");
+        } finally {
+          setConfirmOpen(false);
+        }
       }
-    } catch (error) {
-      console.error("Error deleting sample:", error);
-      alert("Error deleting sample. Please try again.");
-    }
+    );
   };
   
   return (
     <div style={{ width: '100%', maxWidth: '100%', margin: '40px auto 0 auto', padding: '0' }}>
+      <ConfirmationDialog
+        open={confirmOpen}
+        title={confirmTitle}
+        message={confirmMessage}
+        onConfirm={() => confirmAction && confirmAction()}
+        onCancel={() => setConfirmOpen(false)}
+      />
       <h2 style={{ margin: '1.5em 0 0.5em 0', textAlign: 'left', marginTop: '2em' }}>Samples collected by {driverName}</h2>
       <div style={{ overflowX: 'auto', width: '100%', marginTop: '-10px' }}>
         <table className="it-users-table" style={{ width: '100%', minWidth: '1200px' }}>
-        <thead>
-          <tr>
-            <th style={{ fontSize: '1.5em', color: '#102542' }}>SID</th>
-            <th style={{ fontSize: '1.5em', color: '#102542', textAlign: 'left', width: '140px' }}>Sample Type</th>
-            <th style={{ width: '220px', fontSize: '1.5em', color: '#102542', textAlign: 'left' }}>Location</th>
-            <th style={{ fontSize: '1.5em', color: '#102542', textAlign: 'left' }}>Scanned Date</th>
-            <th style={{ width: '140px', fontSize: '1.5em', color: '#102542', textAlign: 'left' }}>Arrived Date</th>
-            <th style={{ fontSize: '1.5em', color: '#102542', textAlign: 'center' }}>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {samples.length === 0 ? (
-            <tr><td colSpan={6} style={{ padding: '1.5em', color: '#888', textAlign: 'center' }}>No samples found for this driver.</td></tr>
-          ) : (
-            samples.map((group, idx) => (
-              <React.Fragment key={group.barcode || idx}>
-                <tr className={group.allApproved ? "approved" : "pending"} style={activeBarcode === group.barcode ? { backgroundColor: '#c3e6cb', borderLeft: '8px solid #28a745', boxShadow: '0 4px 12px rgba(40, 167, 69, 0.25)', transform: 'scale(1.01)' } : {}}>
-                  <td style={activeBarcode === group.barcode ? { color: '#0066cc', fontWeight: 'bold', fontSize: '12.5px' } : { fontSize: '12.5px' }}>{group.barcode ? `SID-${group.barcode}` : '-'}</td>
-                  <td style={{ textAlign: 'left', fontSize: '12.5px' }}>
-                    {group.samples.length === 1 ? (
-                      // Display sample type directly for single samples
-                      <span style={{ 
-                        fontSize: '12.5px',
-                        fontWeight: '500',
-                        color: '#495057',
-                        textAlign: 'left',
-                        display: 'block',
-                        paddingLeft: '20px'
-                      }}>
-                        {group.samples[0].sampleType || '-'}
-                      </span>
-                    ) : (
-                      // Show button for multiple samples
-                      <button
-                        onClick={() => {
-                          if (activeBarcode === group.barcode) {
-                            // If clicking the same barcode, close it
-                            setActiveBarcode(null);
-                            setExpandedBarcodes(new Set());
-                          } else {
-                            // If clicking a different barcode, close previous and open new one
-                            setActiveBarcode(group.barcode);
-                            setExpandedBarcodes(new Set([group.barcode]));
-                          }
-                        }}
-                        className="btn"
-                        style={{ position: 'relative' }}
-                        title={group.samples.map(sample => sample.sampleType || 'Unknown').filter((type, index, arr) => arr.indexOf(type) === index).join(', ')}
-                      >
-                        <span style={activeBarcode === group.barcode ? { textAlign: 'left', fontSize: '12.5px', whiteSpace: 'nowrap' } : { fontSize: '12.5px' }}>
-                          {activeBarcode === group.barcode ? 'Hide Samples' : `${group.samples.length} Samples`}
+          <thead>
+            <tr>
+              <th style={{ fontSize: '1.5em', color: '#102542' }}>SID</th>
+              <th style={{ fontSize: '1.5em', color: '#102542', textAlign: 'left', width: '140px' }}>Sample Type</th>
+              <th style={{ width: '220px', fontSize: '1.5em', color: '#102542', textAlign: 'left' }}>Location</th>
+              <th style={{ fontSize: '1.5em', color: '#102542', textAlign: 'left' }}>Scanned Date</th>
+              <th style={{ width: '140px', fontSize: '1.5em', color: '#102542', textAlign: 'left', paddingRight: '8rem' }}>Arrived Date</th>
+              <th style={{ fontSize: '1.5em', color: '#102542', textAlign: 'left', paddingLeft: '0' }}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {samples.length === 0 ? (
+              <tr><td colSpan={6} style={{ padding: '1.5em', color: '#888', textAlign: 'center' }}>No samples found for this driver.</td></tr>
+            ) : (
+              samples.map((group, idx) => (
+                <React.Fragment key={group.barcode || idx}>
+                  <tr className={group.allApproved ? "approved" : "pending"} style={activeBarcode === group.barcode ? { backgroundColor: '#c3e6cb', borderLeft: '8px solid #28a745', boxShadow: '0 4px 12px rgba(40, 167, 69, 0.25)', transform: 'scale(1.01)' } : {}}>
+                    <td style={activeBarcode === group.barcode ? { color: '#0066cc', fontWeight: 'bold', fontSize: '12.5px' } : { fontSize: '12.5px' }}>{group.barcode ? `SID-${group.barcode}` : '-'}</td>
+                    <td style={{ textAlign: 'left', fontSize: '12.5px' }}>
+                      {group.samples.length === 1 ? (
+                        // Display sample type directly for single samples
+                        <span style={{ 
+                          fontSize: '12.5px',
+                          fontWeight: '500',
+                          color: '#495057',
+                          textAlign: 'left',
+                          display: 'block',
+                          paddingLeft: '20px'
+                        }}>
+                          {group.samples[0].sampleType || '-'}
                         </span>
+                      ) : (
+                        // Show button for multiple samples
+                        <button
+                          onClick={() => {
+                            if (activeBarcode === group.barcode) {
+                              // If clicking the same barcode, close it
+                              setActiveBarcode(null);
+                              setExpandedBarcodes(new Set());
+                            } else {
+                              // If clicking a different barcode, close previous and open new one
+                              setActiveBarcode(group.barcode);
+                              setExpandedBarcodes(new Set([group.barcode]));
+                            }
+                          }}
+                          className="btn"
+                          style={{ position: 'relative' }}
+                          title={group.samples.map(sample => sample.sampleType || 'Unknown').filter((type, index, arr) => arr.indexOf(type) === index).join(', ')}
+                        >
+                          <span style={activeBarcode === group.barcode ? { textAlign: 'left', fontSize: '12.5px', whiteSpace: 'nowrap' } : { fontSize: '12.5px' }}>
+                            {activeBarcode === group.barcode ? 'Hide Samples' : `${group.samples.length} Samples`}
+                          </span>
+                        </button>
+                      )}
+                    </td>
+                    <td style={{ width: '220px', textAlign: 'left', fontSize: '12.5px' }}>{group.location || '-'}</td>
+                    <td style={{ textAlign: 'left', fontSize: '12.5px' }}>{group.latestDate ? group.latestDate.toLocaleString() : '-'}</td>
+                    <td style={{ width: '140px', textAlign: 'left', paddingRight: '8rem' }}>
+                      {group.allApproved ? (
+                        <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12.5px', whiteSpace: 'nowrap' }}>
+                          {group.samples[0]?.arrivedDate?.toDate ? 
+                            (group.samples.length === 1 ? 
+                              // Full timestamp for single samples with custom formatting
+                              (() => {
+                                const date = group.samples[0].arrivedDate.toDate();
+                                const formatted = date.toLocaleString('en-US', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  second: '2-digit',
+                                  hour12: true
+                                });
+                                // Split the string to style 'at' and 'AM'/'PM' in black
+                                const parts = formatted.split(' at ');
+                                if (parts.length === 2) {
+                                  const timeParts = parts[1].split(' ');
+                                  const time = timeParts[0];
+                                  const ampm = timeParts[1];
+                                  return (
+                                    <>
+                                      <span style={{ color: '#28a745', fontSize: '12.5px' }}>{parts[0]}</span>
+                                      <span style={{ color: '#000000', fontSize: '12.5px' }}> at </span>
+                                      <span style={{ color: '#28a745', fontSize: '12.5px' }}>{time}</span>
+                                      <span style={{ color: '#000000', fontSize: '12.5px' }}> {ampm}</span>
+                                    </>
+                                  );
+                                }
+                                return <span style={{ color: '#28a745', fontSize: '12.5px' }}>{formatted}</span>;
+                              })() :
+                              // Date only for multiple samples
+                              group.samples[0].arrivedDate.toDate().toLocaleDateString('en-US', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })
+                            ) : 
+                            'Approved'
+                          }
+                        </span>
+                      ) : (
+                        <span style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '12.5px' }}>Not Arrived</span>
+                      )}
+                    </td>
+                    <td style={{ textAlign: 'left' }}>
+                      <button
+                        onClick={() => handleDelete(group)}
+                        className="btn-approve-all"
+                        style={{ background: 'linear-gradient(to right, #dc3545, #c82333)', color: '#fff', padding: '0.14em 0.35em' }}
+                        onMouseOver={e => { e.currentTarget.style.background = 'linear-gradient(to right, #c82333, #bd2130)'; e.currentTarget.style.transform = 'scale(1.02)'; }}
+                        onMouseOut={e => { e.currentTarget.style.background = 'linear-gradient(to right, #dc3545, #c82333)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                      >
+                        <span>Clear</span>
                         <div className="ripple-container">
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                          
                           <span></span>
                           <span></span>
                           <span></span>
@@ -562,212 +618,120 @@ function SamplesTable({ driverName, driverId }) {
                           <span></span>
                         </div>
                       </button>
-                    )}
-                  </td>
-                  <td style={{ width: '220px', textAlign: 'left', fontSize: '12.5px' }}>{group.location || '-'}</td>
-                                    <td style={{ textAlign: 'left', fontSize: '12.5px' }}>{group.latestDate ? group.latestDate.toLocaleString() : '-'}</td>
-                  <td style={{ width: '140px', textAlign: 'left' }}>
-                    {group.allApproved ? (
-                      <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12.5px', whiteSpace: 'nowrap' }}>
-                        {group.samples[0]?.arrivedDate?.toDate ? 
-                          (group.samples.length === 1 ? 
-                            // Full timestamp for single samples with custom formatting
-                            (() => {
-                              const date = group.samples[0].arrivedDate.toDate();
-                              const formatted = date.toLocaleString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                second: '2-digit',
-                                hour12: true
-                              });
-                              // Split the string to style 'at' and 'AM'/'PM' in black
-                              const parts = formatted.split(' at ');
-                              if (parts.length === 2) {
-                                const timeParts = parts[1].split(' ');
-                                const time = timeParts[0];
-                                const ampm = timeParts[1];
-                                return (
-                                  <>
-                                    <span style={{ color: '#28a745', fontSize: '12.5px' }}>{parts[0]}</span>
-                                    <span style={{ color: '#000000', fontSize: '12.5px' }}> at </span>
-                                    <span style={{ color: '#28a745', fontSize: '12.5px' }}>{time}</span>
-                                    <span style={{ color: '#000000', fontSize: '12.5px' }}> {ampm}</span>
-                                  </>
-                                );
-                              }
-                              return <span style={{ color: '#28a745', fontSize: '12.5px' }}>{formatted}</span>;
-                            })() :
-                            // Date only for multiple samples
-                            group.samples[0].arrivedDate.toDate().toLocaleDateString('en-US', {
-                              weekday: 'long',
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })
-                          ) : 
-                          'Approved'
-                        }
-                      </span>
-                    ) : (
-                      <span style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '12.5px' }}>Not Arrived</span>
-                    )}
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <button
-                      onClick={() => handleDelete(group)}
-                      className="btn-delete"
-                      style={{
-                        padding: '0.2em 0.4em',
-                        fontSize: '0.9em',
-                        background: 'linear-gradient(to right, #dc3545, #c82333)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontWeight: '600',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseOver={e => {
-                        e.currentTarget.style.background = 'linear-gradient(to right, #c82333, #bd2130)';
-                        e.currentTarget.style.transform = 'scale(1.05)';
-                      }}
-                      onMouseOut={e => {
-                        e.currentTarget.style.background = 'linear-gradient(to right, #dc3545, #c82333)';
-                        e.currentTarget.style.transform = 'scale(1)';
-                      }}
-                    >
-                      <span style={{ fontSize: '1.1em' }}>❌</span>
-                      <span>Clear</span>
-                    </button>
-                  </td>
-                </tr>
-                
-                {/* Expandable sub-samples */}
-                {activeBarcode === group.barcode && group.samples.length > 1 && (
-                  <tr>
-                    <td colSpan={6} style={{ padding: 0, border: 'none' }}>
-                      <div style={{
-                        background: '#C8C4E1',
-                        padding: '0',
-                        margin: '0',
-                        borderRadius: '8px',
-                        border: 'none',
-                        width: 'calc(100vw - 11px)',
-                        marginLeft: '5px',
-                        marginRight: '5px',
-                        transform: 'translateX(-4px)',
-                        overflowX: 'auto'
-                      }}>
-
-                        <table style={{ width: '100%', borderCollapse: 'collapse', marginLeft: '0', marginRight: '0', minWidth: '1400px' }}>
-                          <thead>
-                            <tr style={{ borderBottom: '2px solid #dee2e6' }}>
-                              <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>SID</th>
-                              <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Sample Type</th>
-                              <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Scanned Date</th>
-                              <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Arrived Date</th>
-                              <th style={{ padding: '0.5rem', textAlign: 'center', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Action</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {group.samples.sort((a, b) => {
-                              // Use subSampleNumber for sorting (new structure) or fallback to old logic
-                              const aNum = a.subSampleNumber || parseInt(a.SID?.split('_').pop() || '0');
-                              const bNum = b.subSampleNumber || parseInt(b.SID?.split('_').pop() || '0');
-                              return aNum - bNum; // Sort in ascending order
-                            }).map((sample, sampleIdx) => (
-                              <tr key={sample._docId || sampleIdx} style={{ borderBottom: '1px solid #f8f9fa' }}>
-                                <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem', paddingRight: '3rem' }}>{sample.SID || '-'}</td>
-                                <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: 'calc(1rem + 12px)' }}>{sample.sampleType || '-'}</td>
-                                <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem' }}>
-                                  {sample.date?.toDate ? sample.date.toDate().toLocaleString() : '-'}
-                                </td>
-                                                                                                <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem' }}>
-                                  {sample.arrivedDate?.toDate ? (
-                                    <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12.5px' }}>
-                                      {(() => {
-                                        const date = sample.arrivedDate.toDate();
-                                        const formatted = date.toLocaleString('en-US', {
-                                          year: 'numeric',
-                                          month: 'long',
-                                          day: 'numeric',
-                                          hour: '2-digit',
-                                          minute: '2-digit',
-                                          second: '2-digit',
-                                          hour12: true
-                                        });
-                                        // Split the string to style 'at' and 'AM'/'PM' in black
-                                        const parts = formatted.split(' at ');
-                                        if (parts.length === 2) {
-                                          const timeParts = parts[1].split(' ');
-                                          const time = timeParts[0];
-                                          const ampm = timeParts[1];
-                                          return (
-                                            <>
-                                              <span style={{ color: '#28a745', fontSize: '12.5px' }}>{parts[0]}</span>
-                                              <span style={{ color: '#000000', fontSize: '12.5px' }}> at </span>
-                                              <span style={{ color: '#28a745', fontSize: '12.5px' }}>{time}</span>
-                                              <span style={{ color: '#000000', fontSize: '12.5px' }}> {ampm}</span>
-                                            </>
-                                          );
-                                        }
-                                        return <span style={{ color: '#28a745', fontSize: '12.5px' }}>{formatted}</span>;
-                                      })()}
-                                    </span>
-                                  ) : (
-                                    <span style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '12.5px' }}>Not Arrived</span>
-                                  )}
-                                </td>
-                                <td style={{ padding: '0.5rem', fontSize: '12.5px', textAlign: 'center' }}>
-                                  <button
-                                    onClick={() => handleDeleteSample(sample)}
-                                    className="btn-delete"
-                                    style={{
-                                      padding: '0.2em 0.4em',
-                                      fontSize: '0.9em',
-                                      background: 'linear-gradient(to right, #dc3545, #c82333)',
-                                      color: 'white',
-                                      border: 'none',
-                                      borderRadius: '4px',
-                                      cursor: 'pointer',
-                                      fontWeight: '600',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '4px',
-                                      transition: 'all 0.2s'
-                                    }}
-                                    onMouseOver={e => {
-                                      e.currentTarget.style.background = 'linear-gradient(to right, #c82333, #bd2130)';
-                                      e.currentTarget.style.transform = 'scale(1.05)';
-                                    }}
-                                    onMouseOut={e => {
-                                      e.currentTarget.style.background = 'linear-gradient(to right, #dc3545, #c82333)';
-                                      e.currentTarget.style.transform = 'scale(1)';
-                                    }}
-                                  >
-                                    <span style={{ fontSize: '1.1em' }}>❌</span>
-                                    <span>Clear</span>
-                                  </button>
-                                </td>
+                    </td>
+                  </tr>
+                  
+                  {/* Expandable sub-samples */}
+                  {activeBarcode === group.barcode && group.samples.length > 1 && (
+                    <tr>
+                      <td colSpan={6} style={{ padding: 0, border: 'none' }}>
+                        <div style={{
+                          background: '#C8C4E1',
+                          padding: '0',
+                          margin: '0',
+                          borderRadius: '8px',
+                          border: 'none',
+                          width: 'calc(100vw - 11px)',
+                          marginLeft: '5px',
+                          marginRight: '5px',
+                          transform: 'translateX(-4px)',
+                          overflowX: 'auto'
+                        }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', marginLeft: '0', marginRight: '0', minWidth: '1400px' }}>
+                            <thead>
+                              <tr style={{ borderBottom: '2px solid #dee2e6' }}>
+                                <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>SID</th>
+                                <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Sample Type</th>
+                                <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Scanned Date</th>
+                                <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Arrived Date</th>
+                                <th style={{ padding: '0.5rem', textAlign: 'center', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff' }}>Action</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-              </td>
-            </tr>
-                )}
-              </React.Fragment>
-            ))
-          )}
-        </tbody>
-      </table>
+                            </thead>
+                            <tbody>
+                              {group.samples.sort((a, b) => {
+                                // Use subSampleNumber for sorting (new structure) or fallback to old logic
+                                const aNum = a.subSampleNumber || parseInt(a.SID?.split('_').pop() || '0');
+                                const bNum = b.subSampleNumber || parseInt(b.SID?.split('_').pop() || '0');
+                                return aNum - bNum; // Sort in ascending order
+                              }).map((sample, sampleIdx) => (
+                                <tr key={sample._docId || sampleIdx} style={{ borderBottom: '1px solid #f8f9fa' }}>
+                                  <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem', paddingRight: '3rem' }}>{sample.SID || '-'}</td>
+                                  <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: 'calc(1rem + 12px)' }}>{sample.sampleType || '-'}</td>
+                                  <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem' }}>
+                                    {sample.date?.toDate ? sample.date.toDate().toLocaleString() : '-'}
+                                  </td>
+                                  <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem' }}>
+                                    {sample.arrivedDate?.toDate ? (
+                                      <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12.5px' }}>
+                                        {(() => {
+                                          const date = sample.arrivedDate.toDate();
+                                          const formatted = date.toLocaleString('en-US', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            second: '2-digit',
+                                            hour12: true
+                                          });
+                                          // Split the string to style 'at' and 'AM'/'PM' in black
+                                          const parts = formatted.split(' at ');
+                                          if (parts.length === 2) {
+                                            const timeParts = parts[1].split(' ');
+                                            const time = timeParts[0];
+                                            const ampm = timeParts[1];
+                                            return (
+                                              <>
+                                                <span style={{ color: '#28a745', fontSize: '12.5px' }}>{parts[0]}</span>
+                                                <span style={{ color: '#000000', fontSize: '12.5px' }}> at </span>
+                                                <span style={{ color: '#28a745', fontSize: '12.5px' }}>{time}</span>
+                                                <span style={{ color: '#000000', fontSize: '12.5px' }}> {ampm}</span>
+                                              </>
+                                            );
+                                          }
+                                          return <span style={{ color: '#28a745', fontSize: '12.5px' }}>{formatted}</span>;
+                                        })()}
+                                      </span>
+                                    ) : (
+                                      <span style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '12.5px' }}>Not Arrived</span>
+                                    )}
+                                  </td>
+                                  <td style={{ padding: '0.5rem', fontSize: '12.5px', textAlign: 'center' }}>
+                                    <button
+                                      onClick={() => handleDeleteSample(sample, group.barcode)}
+                                      className="btn"
+                                      style={{ padding: '0.2em 0.4em', fontSize: '0.9em', background: 'linear-gradient(to right, #dc3545, #c82333)', color: '#fff' }}
+                                      onMouseOver={e => { e.currentTarget.style.background = 'linear-gradient(to right, #c82333, #bd2130)'; e.currentTarget.style.transform = 'scale(1.02)'; }}
+                                      onMouseOut={e => { e.currentTarget.style.background = 'linear-gradient(to right, #dc3545, #c82333)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                    >
+                                      <span>Clear</span>
+                                      <div className="ripple-container">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                      </div>
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
       <div style={{ fontSize: '0.9em', marginTop: '0.3em', color: '#555' }}>
         Total Barcodes: {samples.length}
@@ -796,8 +760,8 @@ const DriverSampleScan = () => {
     // Only apply refresh logic if this is driver access (from Scanner page)
     if (!isDriverAccess) return;
 
-      const user = auth.currentUser;
-      if (!user) return;
+    const user = auth.currentUser;
+    if (!user) return;
 
     // Check if this is a page refresh
     const isRefresh = sessionStorage.getItem('driversamplescan-refreshing');
@@ -878,919 +842,74 @@ const DriverSampleScan = () => {
     const updateLastActive = async () => {
       if (!isActive) return;
       
-          const user = auth.currentUser;
-          if (!user) return;
-      
-          try {
-            const driverCol = collection(db, 'driver');
-        const q = query(driverCol, where('authUid', '==', user.uid));
-            const querySnapshot = await getDocs(q);
-            if (!querySnapshot.empty) {
-              const driverDoc = querySnapshot.docs[0];
-          // Only update lastActive, don't change network status
-          await updateDoc(driverDoc.ref, {
-            lastActive: new Date(),
-            online: true, // Keep online status but don't change networkStatus
-              });
-            }
-          } catch (err) {
-        console.error("Error updating last active:", err);
-        // Don't show error to user for heartbeat
-        }
-    };
-
-    updateLastActive(); // Initial ping
-    intervalId = setInterval(updateLastActive, 10000); // Ping every 10s
-    
-    return () => {
-      isActive = false;
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, []);
-
-  return (
-    <ErrorBoundary>
-      <button
-        onClick={() => navigate(-1)}
-        style={{
-          position: 'absolute',
-          top: 20,
-          left: 20,
-          padding: '0.18em 0.7em',
-          fontSize: '0.85em',
-          borderRadius: '8px',
-          border: 'none',
-          background: 'linear-gradient(90deg, #1c6954 0%, #23a393 100%)',
-          color: '#fff',
-          fontWeight: 700,
-          cursor: 'pointer',
-          boxShadow: '0 2px 8px rgba(44, 62, 80, 0.10)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          transition: 'all 0.2s',
-        }}
-        onMouseOver={e => {
-          e.currentTarget.style.background = 'linear-gradient(90deg, #155c47 0%, #1c6954 100%)';
-          e.currentTarget.style.transform = 'scale(1.06)';
-        }}
-        onMouseOut={e => {
-          e.currentTarget.style.background = 'linear-gradient(90deg, #1c6954 0%, #23a393 100%)';
-          e.currentTarget.style.transform = 'scale(1)';
-        }}
-      >
-        <span style={{ fontSize: '1em', marginRight: 3 }}>&larr;</span> <span style={{ fontSize: '0.95em' }}>Back</span>
-      </button>
-      <SamplesTable driverName={driverName} driverId={driverId} />
-    </ErrorBoundary>
-  );
-};
-
-export default DriverSampleScan;
-
-
-                        fontWeight: '500',
-
-                        color: '#495057',
-
-                        textAlign: 'left',
-
-                        display: 'block',
-
-                        paddingLeft: '20px'
-
-                      }}>
-
-                        {group.samples[0].sampleType || '-'}
-
-                      </span>
-
-                    ) : (
-
-                      // Show button for multiple samples
-
-                      <button
-
-                        onClick={() => {
-
-                          if (activeBarcode === group.barcode) {
-
-                            // If clicking the same barcode, close it
-
-                            setActiveBarcode(null);
-
-                            setExpandedBarcodes(new Set());
-
-                          } else {
-
-                            // If clicking a different barcode, close previous and open new one
-
-                            setActiveBarcode(group.barcode);
-
-                            setExpandedBarcodes(new Set([group.barcode]));
-
-                          }
-
-                        }}
-
-                        className="btn"
-
-                        style={{ position: 'relative' }}
-
-                        title={group.samples.map(sample => sample.sampleType || 'Unknown').filter((type, index, arr) => arr.indexOf(type) === index).join(', ')}
-
-                      >
-
-                        <span style={activeBarcode === group.barcode ? { textAlign: 'left', fontSize: '12.5px', whiteSpace: 'nowrap' } : { fontSize: '12.5px' }}>
-
-                          {activeBarcode === group.barcode ? 'Hide Samples' : `${group.samples.length} Samples`}
-
-                        </span>
-
-                        <div className="ripple-container">
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                          <span></span>
-
-                        </div>
-
-                      </button>
-
-                    )}
-
-                  </td>
-
-                  <td style={{ width: '220px', textAlign: 'left', fontSize: '12.5px' }}>{group.location || '-'}</td>
-
-                                    <td style={{ textAlign: 'left', fontSize: '12.5px' }}>{group.latestDate ? group.latestDate.toLocaleString() : '-'}</td>
-
-                  <td style={{ width: '140px', textAlign: 'left' }}>
-
-                    {group.allApproved ? (
-
-                      <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12.5px', whiteSpace: 'nowrap' }}>
-
-                        {group.samples[0]?.arrivedDate?.toDate ? 
-
-                          (group.samples.length === 1 ? 
-
-                            // Full timestamp for single samples with custom formatting
-
-                            (() => {
-
-                              const date = group.samples[0].arrivedDate.toDate();
-
-                              const formatted = date.toLocaleString('en-US', {
-
-                                year: 'numeric',
-
-                                month: 'long',
-
-                                day: 'numeric',
-
-                                hour: '2-digit',
-
-                                minute: '2-digit',
-
-                                second: '2-digit',
-
-                                hour12: true
-
-                              });
-
-                              // Split the string to style 'at' and 'AM'/'PM' in black
-
-                              const parts = formatted.split(' at ');
-
-                              if (parts.length === 2) {
-
-                                const timeParts = parts[1].split(' ');
-
-                                const time = timeParts[0];
-
-                                const ampm = timeParts[1];
-
-                                return (
-
-                                  <>
-
-                                    <span style={{ color: '#28a745', fontSize: '12.5px' }}>{parts[0]}</span>
-
-                                    <span style={{ color: '#000000', fontSize: '12.5px' }}> at </span>
-
-                                    <span style={{ color: '#28a745', fontSize: '12.5px' }}>{time}</span>
-
-                                    <span style={{ color: '#000000', fontSize: '12.5px' }}> {ampm}</span>
-
-                                  </>
-
-                                );
-
-                              }
-
-                              return <span style={{ color: '#28a745', fontSize: '12.5px' }}>{formatted}</span>;
-
-                            })() :
-
-                            // Date only for multiple samples
-
-                            group.samples[0].arrivedDate.toDate().toLocaleDateString('en-US', {
-
-                              weekday: 'long',
-
-                              year: 'numeric',
-
-                              month: 'long',
-
-                              day: 'numeric'
-
-                            })
-
-                          ) : 
-
-                          'Approved'
-
-                        }
-
-                      </span>
-
-                    ) : (
-
-                      <span style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '12.5px' }}>Not Arrived</span>
-
-                    )}
-
-                  </td>
-
-                </tr>
-
-                
-
-                {/* Expandable sub-samples */}
-
-                {activeBarcode === group.barcode && group.samples.length > 1 && (
-
-                  <tr>
-
-                    <td colSpan={4} style={{ padding: 0, border: 'none' }}>
-
-                      <div style={{
-
-                        background: '#C8C4E1',
-
-                        padding: '0',
-
-                        margin: '0',
-
-                        borderRadius: '8px',
-
-                        border: 'none',
-
-                        width: 'calc(100vw - 11px)',
-
-                        marginLeft: '5px',
-
-                        marginRight: '5px',
-
-                        transform: 'translateX(-4px)',
-
-                        overflowX: 'auto'
-
-                      }}>
-
-
-
-                        <table style={{ width: '100%', borderCollapse: 'collapse', marginLeft: '0', marginRight: '0', minWidth: '1400px' }}>
-
-                          <thead>
-
-                            <tr style={{ borderBottom: '2px solid #dee2e6' }}>
-
-                              <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>SID</th>
-
-                              <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Sample Type</th>
-
-                              <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Scanned Date</th>
-
-                              <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Arrived Date</th>
-
-                            </tr>
-
-                          </thead>
-
-                          <tbody>
-
-                            {group.samples.sort((a, b) => {
-
-                              // Use subSampleNumber for sorting (new structure) or fallback to old logic
-
-                              const aNum = a.subSampleNumber || parseInt(a.SID?.split('_').pop() || '0');
-
-                              const bNum = b.subSampleNumber || parseInt(b.SID?.split('_').pop() || '0');
-
-                              return aNum - bNum; // Sort in ascending order
-
-                            }).map((sample, sampleIdx) => (
-
-                              <tr key={sample._docId || sampleIdx} style={{ borderBottom: '1px solid #f8f9fa' }}>
-
-                                <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem', paddingRight: '3rem' }}>{sample.SID || '-'}</td>
-
-                                <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: 'calc(1rem + 12px)' }}>{sample.sampleType || '-'}</td>
-
-                                <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem' }}>
-
-                                  {sample.date?.toDate ? sample.date.toDate().toLocaleString() : '-'}
-
-                                </td>
-
-                                                                                                <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem' }}>
-
-                                  {sample.arrivedDate?.toDate ? (
-
-                                    <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12.5px' }}>
-
-                                      {(() => {
-
-                                        const date = sample.arrivedDate.toDate();
-
-                                        const formatted = date.toLocaleString('en-US', {
-
-                                          year: 'numeric',
-
-                                          month: 'long',
-
-                                          day: 'numeric',
-
-                                          hour: '2-digit',
-
-                                          minute: '2-digit',
-
-                                          second: '2-digit',
-
-                                          hour12: true
-
-                                        });
-
-                                        // Split the string to style 'at' and 'AM'/'PM' in black
-
-                                        const parts = formatted.split(' at ');
-
-                                        if (parts.length === 2) {
-
-                                          const timeParts = parts[1].split(' ');
-
-                                          const time = timeParts[0];
-
-                                          const ampm = timeParts[1];
-
-                                          return (
-
-                                            <>
-
-                                              <span style={{ color: '#28a745', fontSize: '12.5px' }}>{parts[0]}</span>
-
-                                              <span style={{ color: '#000000', fontSize: '12.5px' }}> at </span>
-
-                                              <span style={{ color: '#28a745', fontSize: '12.5px' }}>{time}</span>
-
-                                              <span style={{ color: '#000000', fontSize: '12.5px' }}> {ampm}</span>
-
-                                            </>
-
-                                          );
-
-                                        }
-
-                                        return <span style={{ color: '#28a745', fontSize: '12.5px' }}>{formatted}</span>;
-
-                                      })()}
-
-                                    </span>
-
-                                  ) : (
-
-                                    <span style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '12.5px' }}>Not Arrived</span>
-
-                                  )}
-
-                                </td>
-
-                              </tr>
-
-                            ))}
-
-                          </tbody>
-
-                        </table>
-
-                      </div>
-
-              </td>
-
-            </tr>
-
-                )}
-
-              </React.Fragment>
-
-            ))
-
-          )}
-
-        </tbody>
-
-      </table>
-
-      </div>
-
-      <div style={{ fontSize: '0.9em', marginTop: '0.3em', color: '#555' }}>
-
-        Total Barcodes: {samples.length}
-
-      </div>
-
-    </div>
-
-  );
-
-}
-
-
-
-const DriverSampleScan = () => {
-
-  const location = useLocation();
-
-  const navigate = useNavigate();
-
-  const driverName = location.state?.driverName || "Driver";
-
-  const driverId = location.state?.driverId || "";
-
-
-
-  // Debug logging
-
-  console.log("DriverSampleScan - driverName:", driverName);
-
-  console.log("DriverSampleScan - driverId:", driverId);
-
-  console.log("DriverSampleScan - location.state:", location.state);
-
-
-
-  // Determine if this is accessed by admin or driver
-
-  const isAdminAccess = location.state?.isAdminAccess || false;
-
-  const isDriverAccess = !isAdminAccess;
-
-
-
-  // Refresh detection and session management - ONLY for driver access
-
-  useEffect(() => {
-
-    // Only apply refresh logic if this is driver access (from Scanner page)
-
-    if (!isDriverAccess) return;
-
-
-
       const user = auth.currentUser;
-
       if (!user) return;
-
-
-
-    // Check if this is a page refresh
-
-    const isRefresh = sessionStorage.getItem('driversamplescan-refreshing');
-
-    
-
-    if (isRefresh) {
-
-      // This is a refresh - mark driver offline first
-
-      const markDriverOffline = async () => {
-
-        try {
-
-          const driverCol = collection(db, 'driver');
-
-          const q = query(driverCol, where('authUid', '==', user.uid));
-
-          const querySnapshot = await getDocs(q);
-
-          if (!querySnapshot.empty) {
-
-            const driverDoc = querySnapshot.docs[0];
-
-            await updateDoc(driverDoc.ref, {
-
-              online: false,
-
-              networkStatus: 'offline',
-
-              showLocation: false,
-
-              lastActive: serverTimestamp()
-
-            });
-
-          }
-
-        } catch (err) {
-
-          console.error("Error marking driver offline on refresh:", err);
-
-        }
-
-      };
-
       
-
-      markDriverOffline();
-
-      sessionStorage.removeItem('driversamplescan-refreshing');
-
-    }
-
-
-
-    // Mark driver as online when page loads (new session)
-
-    const markDriverOnline = async () => {
-
       try {
-
         const driverCol = collection(db, 'driver');
-
         const q = query(driverCol, where('authUid', '==', user.uid));
-
         const querySnapshot = await getDocs(q);
-
         if (!querySnapshot.empty) {
-
           const driverDoc = querySnapshot.docs[0];
-
-          await updateDoc(driverDoc.ref, {
-
-            online: true,
-
-            networkStatus: 'online',
-
-            showLocation: true,
-
-            lastActive: serverTimestamp()
-
-          });
-
-        }
-
-      } catch (err) {
-
-        console.error("Error marking driver online on page load:", err);
-
-      }
-
-    };
-
-
-
-    // Small delay to ensure offline status is set before going online
-
-    setTimeout(() => {
-
-      markDriverOnline();
-
-    }, 1000);
-
-
-
-  }, [isDriverAccess]);
-
-
-
-  // Set refresh flag before page unload - ONLY for driver access
-
-  useEffect(() => {
-
-    // Only apply refresh logic if this is driver access (from Scanner page)
-
-    if (!isDriverAccess) return;
-
-
-
-    const handleBeforeUnload = (e) => {
-
-      // Set flag to indicate this is a refresh
-
-      sessionStorage.setItem('driversamplescan-refreshing', 'true');
-
-    };
-
-
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-
-    };
-
-  }, [isDriverAccess]);
-
-
-
-  // Heartbeat logic - only update lastActive, don't change network status
-
-  useEffect(() => {
-
-    let intervalId;
-
-    let isActive = true;
-
-
-
-    const updateLastActive = async () => {
-
-      if (!isActive) return;
-
-      
-
-          const user = auth.currentUser;
-
-          if (!user) return;
-
-      
-
-          try {
-
-            const driverCol = collection(db, 'driver');
-
-        const q = query(driverCol, where('authUid', '==', user.uid));
-
-            const querySnapshot = await getDocs(q);
-
-            if (!querySnapshot.empty) {
-
-              const driverDoc = querySnapshot.docs[0];
-
           // Only update lastActive, don't change network status
-
           await updateDoc(driverDoc.ref, {
-
             lastActive: new Date(),
-
             online: true, // Keep online status but don't change networkStatus
-
-              });
-
-            }
-
-          } catch (err) {
-
-        console.error("Error updating last active:", err);
-
-        // Don't show error to user for heartbeat
-
+          });
         }
-
+      } catch (err) {
+        console.error("Error updating last active:", err);
+        // Don't show error to user for heartbeat
+      }
     };
-
-
 
     updateLastActive(); // Initial ping
-
     intervalId = setInterval(updateLastActive, 10000); // Ping every 10s
-
     
-
     return () => {
-
       isActive = false;
-
       if (intervalId) {
-
         clearInterval(intervalId);
-
       }
-
     };
-
   }, []);
 
-
-
   return (
-
     <ErrorBoundary>
-
       <button
-
         onClick={() => navigate(-1)}
-
         style={{
-
           position: 'absolute',
-
           top: 20,
-
           left: 20,
-
           padding: '0.18em 0.7em',
-
           fontSize: '0.85em',
-
           borderRadius: '8px',
-
           border: 'none',
-
           background: 'linear-gradient(90deg, #1c6954 0%, #23a393 100%)',
-
           color: '#fff',
-
           fontWeight: 700,
-
           cursor: 'pointer',
-
           boxShadow: '0 2px 8px rgba(44, 62, 80, 0.10)',
-
           display: 'flex',
-
           alignItems: 'center',
-
           gap: 6,
-
           transition: 'all 0.2s',
-
         }}
-
         onMouseOver={e => {
-
           e.currentTarget.style.background = 'linear-gradient(90deg, #155c47 0%, #1c6954 100%)';
-
           e.currentTarget.style.transform = 'scale(1.06)';
-
         }}
-
         onMouseOut={e => {
-
           e.currentTarget.style.background = 'linear-gradient(90deg, #1c6954 0%, #23a393 100%)';
-
           e.currentTarget.style.transform = 'scale(1)';
-
         }}
-
       >
-
         <span style={{ fontSize: '1em', marginRight: 3 }}>&larr;</span> <span style={{ fontSize: '0.95em' }}>Back</span>
-
       </button>
-
       <SamplesTable driverName={driverName} driverId={driverId} />
-
     </ErrorBoundary>
-
   );
-
 };
 
-
-
-export default DriverSampleScan;
-
-
+export default DriverSampleScan; 

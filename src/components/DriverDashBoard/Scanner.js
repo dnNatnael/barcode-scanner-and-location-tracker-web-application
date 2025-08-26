@@ -34,6 +34,7 @@ const Scanner = () => {
   const [isRepeatedScan, setIsRepeatedScan] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState("");
+  const [gpsStatus, setGpsStatus] = useState({ active: false, coordinates: null, accuracy: null });
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -297,6 +298,119 @@ const Scanner = () => {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
+  // Monitor GPS status
+  useEffect(() => {
+    const checkGpsStatus = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      try {
+        const driverCol = collection(db, 'driver');
+        const q = query(driverCol, where('authUid', '==', user.uid));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const driverDoc = querySnapshot.docs[0];
+          const driverData = driverDoc.data();
+          
+          if (driverData.location && driverData.showLocation && driverData.networkStatus === 'online') {
+            setGpsStatus({
+              active: true,
+              coordinates: {
+                latitude: driverData.location.latitude,
+                longitude: driverData.location.longitude
+              },
+              accuracy: driverData.location.accuracy,
+              timestamp: driverData.location.timestamp
+            });
+          } else {
+            setGpsStatus({ active: false, coordinates: null, accuracy: null });
+          }
+        }
+      } catch (error) {
+        console.error('Error checking GPS status:', error);
+      }
+    };
+
+    // Check GPS status every 5 seconds
+    const intervalId = setInterval(checkGpsStatus, 5000);
+    checkGpsStatus(); // Initial check
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // High-accuracy continuous GPS tracking for real-time location
+  useEffect(() => {
+    let watchId = null;
+    let isMounted = true;
+
+    const startHighAccuracyTracking = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      if (!navigator.geolocation) {
+        console.error('Geolocation not supported');
+        return;
+      }
+
+      try {
+        const driverCol = collection(db, 'driver');
+        const q = query(driverCol, where('authUid', '==', user.uid));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) return;
+        const driverDocRef = querySnapshot.docs[0].ref;
+
+        // Start watching the device GPS with high accuracy and zero cache
+        watchId = navigator.geolocation.watchPosition(
+          async (position) => {
+            if (!isMounted) return;
+            const { latitude, longitude, accuracy, heading, speed } = position.coords;
+            try {
+              await updateDoc(driverDocRef, {
+                location: {
+                  latitude: latitude,
+                  longitude: longitude,
+                  accuracy: accuracy,
+                  heading: heading ?? null,
+                  speed: speed ?? null,
+                  timestamp: new Date().toISOString(),
+                },
+                lastLocationUpdate: serverTimestamp(),
+                lastActive: serverTimestamp(),
+                showLocation: true,
+                online: true,
+                networkStatus: 'online',
+              });
+            } catch (err) {
+              console.error('Error updating GPS location:', err);
+            }
+          },
+          (error) => {
+            console.error('GPS tracking error:', error);
+          },
+          {
+            enableHighAccuracy: true,   // request GPS chip
+            maximumAge: 0,              // do not use cached positions
+            timeout: 10000              // up to 10s to get a fix
+          }
+        );
+      } catch (err) {
+        console.error('Error starting high-accuracy GPS tracking:', err);
+      }
+    };
+
+    // Small delay to ensure auth/getDocs ready
+    const t = setTimeout(startHighAccuracyTracking, 500);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(t);
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
   }, []);
 
   const handleScanSuccess = async (barcodeText) => {
@@ -746,7 +860,15 @@ const Scanner = () => {
               online: false, 
               networkStatus: 'offline',
               showLocation: false, // Hide location display
-              lastActive: serverTimestamp() // Update last active time
+              lastActive: serverTimestamp(), // Update last active time
+              location: {
+                latitude: null,
+                longitude: null,
+                accuracy: null,
+                heading: null,
+                speed: null,
+                timestamp: null,
+              },
             });
             
             navigate('/network-status', { state: { name: driverName } });
@@ -757,6 +879,41 @@ const Scanner = () => {
       >
         Finished
       </button>
+
+      {/* GPS Status Indicator */}
+      {gpsStatus.active && (
+        <div style={{
+          position: 'fixed',
+          top: '10px',
+          left: '10px',
+          background: 'rgba(40, 199, 111, 0.95)',
+          color: 'white',
+          padding: '8px 12px',
+          borderRadius: '8px',
+          fontSize: '0.85em',
+          fontWeight: '600',
+          zIndex: 1000,
+          boxShadow: '0 2px 8px rgba(40, 199, 111, 0.3)',
+          backdropFilter: 'blur(4px)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          maxWidth: '300px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+            <span style={{ fontSize: '1.1em' }}>📍</span>
+            <span>GPS Tracking Active</span>
+          </div>
+          {gpsStatus.coordinates && (
+            <div style={{ fontSize: '0.75em', opacity: 0.9, fontFamily: 'monospace' }}>
+              {gpsStatus.coordinates.latitude.toFixed(6)}, {gpsStatus.coordinates.longitude.toFixed(6)}
+            </div>
+          )}
+          {gpsStatus.accuracy && (
+            <div style={{ fontSize: '0.75em', opacity: 0.9 }}>
+              Accuracy: {Math.round(gpsStatus.accuracy)}m
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
@@ -1281,6 +1438,35 @@ async function saveSampleScan(barcode, location, sampleType) {
   const nextNumber = subSampleCount + 1;
   const finalSampleId = `${baseSampleId}_${nextNumber}`;
 
+  // Determine location: first scan sets it, all subsequent inherit it
+  let locationToUse = (location || "").trim();
+  if (subSampleCount > 0) {
+    // Find the authoritative first location
+    let firstLoc = null;
+    let firstDoc = null;
+    // Prefer subSampleNumber === 1 when available
+    for (const d of existingSamples.docs) {
+      const data = d.data();
+      if (data && data.subSampleNumber === 1) {
+        firstDoc = data;
+        break;
+      }
+    }
+    // Fallback: use earliest by date
+    if (!firstDoc) {
+      firstDoc = existingSamples.docs
+        .map(d => d.data())
+        .filter(Boolean)
+        .sort((a, b) => {
+          const ad = a.date?.toDate ? a.date.toDate() : new Date(a.date || 0);
+          const bd = b.date?.toDate ? b.date.toDate() : new Date(b.date || 0);
+          return ad - bd;
+        })[0];
+    }
+    firstLoc = firstDoc?.location || "";
+    locationToUse = typeof firstLoc === 'string' ? firstLoc : (firstLoc || "");
+  }
+
   await setDoc(doc(db, "samples", finalSampleId), {
     SID: finalSampleId,                      // "SID-BA17695698563_1"
     baseBarcode: barcode,                    // "BA17695698563" (without SID- prefix)
@@ -1288,8 +1474,8 @@ async function saveSampleScan(barcode, location, sampleType) {
     sampleType: sampleType,                  // "Blood, Urine, Tissue, etc."
     driver: driverId,                        // "DID-xxxx" 
     driverName: driverName,                  // "Your Name"
-    date: serverTimestamp(),                 // July 31, 2025, 2:26:11 PM (UTC+3)
-    location: location,                      // "users input (hospitals or clinic or any other)"
+    date: serverTimestamp(),                 // timestamp
+    location: locationToUse,                 // First scan's location for all sub-samples
     subSampleNumber: nextNumber,             // 1, 2, 3, etc.
     isSubSample: true                        // All are sub-samples now
   });

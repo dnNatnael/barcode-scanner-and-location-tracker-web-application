@@ -42,10 +42,17 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
-// Custom icon for driver marker
-const createCustomIcon = (color = '#28c76f') => {
+// Custom icon for driver marker with accuracy indicator
+const createCustomIcon = (color = '#28c76f', accuracy = null) => {
+  const accuracyRadius = accuracy ? Math.min(Math.max(accuracy / 2, 5), 20) : 10;
+  
   return L.divIcon({
     html: `<div style="
+      position: relative;
+      width: 20px;
+      height: 20px;
+    ">
+      <div style="
       width: 20px;
       height: 20px;
       background: ${color};
@@ -58,11 +65,83 @@ const createCustomIcon = (color = '#28c76f') => {
       color: white;
       font-weight: bold;
       font-size: 12px;
-    ">📍</div>`,
+        position: relative;
+        z-index: 2;
+      ">📍</div>
+      ${accuracy ? `<div style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: ${accuracyRadius * 2}px;
+        height: ${accuracyRadius * 2}px;
+        border: 2px solid ${color};
+        border-radius: 50%;
+        opacity: 0.3;
+        z-index: 1;
+      "></div>` : ''}
+    </div>`,
     className: 'custom-marker',
     iconSize: [20, 20],
     iconAnchor: [10, 10]
   });
+};
+
+// Animated marker for smooth transitions
+const AnimatedMarker = ({ position, icon, children, duration = 800 }) => {
+  const [animatedPos, setAnimatedPos] = useState(position);
+  const animRef = useRef(null);
+  const startRef = useRef(null);
+  const fromRef = useRef(position);
+  const toRef = useRef(position);
+
+  useEffect(() => {
+    if (!position || !Array.isArray(position)) return;
+
+    if (!fromRef.current) {
+      fromRef.current = position;
+      setAnimatedPos(position);
+      return;
+    }
+
+    if (fromRef.current[0] === position[0] && fromRef.current[1] === position[1]) {
+      return;
+    }
+
+    startRef.current = null;
+    const currentFrom = animatedPos || fromRef.current;
+    const currentTo = position;
+    fromRef.current = currentFrom;
+    toRef.current = currentTo;
+
+    const step = (ts) => {
+      if (!startRef.current) startRef.current = ts;
+      const elapsed = ts - startRef.current;
+      const t = Math.min(1, elapsed / duration);
+      const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      const lat = currentFrom[0] + (currentTo[0] - currentFrom[0]) * eased;
+      const lng = currentFrom[1] + (currentTo[1] - currentFrom[1]) * eased;
+      setAnimatedPos([lat, lng]);
+      if (t < 1) {
+        animRef.current = requestAnimationFrame(step);
+      } else {
+        setAnimatedPos(currentTo);
+      }
+    };
+
+    if (animRef.current) cancelAnimationFrame(animRef.current);
+    animRef.current = requestAnimationFrame(step);
+
+    return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+  }, [position, duration]);
+
+  return (
+    <Marker position={animatedPos} icon={icon}>
+      {children}
+    </Marker>
+  );
 };
 
 const OneDriver = () => {
@@ -90,7 +169,6 @@ const OneDriver = () => {
       console.log("Nominatim response:", data);
       
       if (data.display_name) {
-        // Extract the most relevant part of the address
         const addressParts = data.display_name.split(', ');
         const nearestPlace = addressParts.slice(0, 3).join(', '); // Take first 3 parts
         console.log("Setting nearest place:", nearestPlace);
@@ -102,6 +180,30 @@ const OneDriver = () => {
     } catch (error) {
       console.error("Error fetching place name:", error);
       setNearestPlace("Location unavailable");
+    }
+  };
+
+  // Format GPS coordinates for display
+  const formatCoordinates = (latitude, longitude) => {
+    const lat = parseFloat(latitude);
+    const lng = parseFloat(longitude);
+    return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  };
+
+  // Format accuracy for display
+  const formatAccuracy = (accuracy) => {
+    if (!accuracy) return 'Unknown';
+    return `${Math.round(accuracy)}m`;
+  };
+
+  // Get location timestamp
+  const getLocationTime = (timestamp) => {
+    if (!timestamp) return 'Unknown';
+    try {
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString();
+    } catch (error) {
+      return 'Unknown';
     }
   };
 
@@ -139,7 +241,6 @@ const OneDriver = () => {
         const driverData = { id: doc.id, ...doc.data() };
         setDriver(driverData);
         
-        // Get nearest place name when location changes
         if (driverData.location && driverData.location.latitude && driverData.location.longitude) {
           console.log("Driver location found, calling getNearestPlace");
           getNearestPlace(driverData.location.latitude, driverData.location.longitude);
@@ -332,42 +433,65 @@ const OneDriver = () => {
             
             {/* Driver marker - Only show if location is visible and available */}
             {isLocationVisible && hasLocation && (
-              <Marker
+              <AnimatedMarker
                 position={[driver.location.latitude, driver.location.longitude]}
-                icon={createCustomIcon('#28c76f')}
+                icon={createCustomIcon('#28c76f', driver.location.accuracy)}
               >
                 <Popup>
-                  <div style={{ textAlign: 'center', minWidth: '200px' }}>
+                  <div style={{ textAlign: 'center', minWidth: '250px' }}>
                     <div style={{ fontWeight: 'bold', fontSize: '1.1em', marginBottom: '0.5rem' }}>
                       {driverName}
                     </div>
                     <div style={{ fontSize: '0.9em', color: '#666', marginBottom: '0.5rem' }}>
                       Driver ID: {driverUserId}
                     </div>
-                    <div style={{ fontSize: '0.9em', color: '#666', marginBottom: '0.5rem' }}>
-                      Location: {driver.location.latitude.toFixed(4)}, {driver.location.longitude.toFixed(4)}
+                    <div style={{ 
+                      fontSize: '0.85em', 
+                      color: '#28c76f',
+                      fontWeight: '600',
+                      marginBottom: '0.5rem',
+                      backgroundColor: '#f0f9ff',
+                      padding: '4px 8px',
+                      borderRadius: '4px'
+                    }}>
+                      📍 Real-time GPS Tracking Active
                     </div>
                     <div style={{ 
                       fontSize: '0.8em', 
-                      color: '#28c76f',
-                      fontWeight: '600',
-                      marginTop: '4px'
+                      color: '#333',
+                      marginBottom: '0.4rem',
+                      fontFamily: 'monospace',
+                      backgroundColor: '#f8f9fa',
+                      padding: '4px 6px',
+                      borderRadius: '3px'
                     }}>
-                      📍 Location Tracking Active
+                      📍 {formatCoordinates(driver.location.latitude, driver.location.longitude)}
                     </div>
+                    {driver.location.accuracy && (
+                      <div style={{ fontSize: '0.8em', color: '#666', marginBottom: '0.4rem' }}>
+                        🎯 Accuracy: {formatAccuracy(driver.location.accuracy)}
+                      </div>
+                    )}
+                    {driver.location.timestamp && (
+                      <div style={{ fontSize: '0.8em', color: '#666', marginBottom: '0.4rem' }}>
+                        ⏰ Updated: {getLocationTime(driver.location.timestamp)}
+                    </div>
+                    )}
                     {nearestPlace && (
                       <div style={{ 
                         fontSize: '0.8em', 
                         color: '#666',
-                        marginTop: '4px',
-                        fontStyle: 'italic'
+                        marginTop: '0.5rem',
+                        fontStyle: 'italic',
+                        borderTop: '1px solid #eee',
+                        paddingTop: '0.5rem'
                       }}>
                         📍 {nearestPlace}
                       </div>
                     )}
                   </div>
                 </Popup>
-              </Marker>
+              </AnimatedMarker>
             )}
           </MapContainer>
           

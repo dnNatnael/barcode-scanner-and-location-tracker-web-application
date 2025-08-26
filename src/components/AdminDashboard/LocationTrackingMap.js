@@ -22,6 +22,63 @@ const MapController = ({ selectedDriver }) => {
   return null;
 };
 
+// Animated marker that interpolates between positions for smooth movement
+const AnimatedMarker = ({ position, icon, children, duration = 800 }) => {
+  const [animatedPos, setAnimatedPos] = useState(position);
+  const animRef = useRef(null);
+  const startRef = useRef(null);
+  const fromRef = useRef(position);
+  const toRef = useRef(position);
+
+  useEffect(() => {
+    if (!position || !Array.isArray(position)) return;
+
+    if (!fromRef.current) {
+      fromRef.current = position;
+      setAnimatedPos(position);
+      return;
+    }
+
+    if (fromRef.current[0] === position[0] && fromRef.current[1] === position[1]) {
+      return;
+    }
+
+    startRef.current = null;
+    const currentFrom = animatedPos || fromRef.current;
+    const currentTo = position;
+    fromRef.current = currentFrom;
+    toRef.current = currentTo;
+
+    const step = (ts) => {
+      if (!startRef.current) startRef.current = ts;
+      const elapsed = ts - startRef.current;
+      const t = Math.min(1, elapsed / duration);
+      const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      const lat = currentFrom[0] + (currentTo[0] - currentFrom[0]) * eased;
+      const lng = currentFrom[1] + (currentTo[1] - currentFrom[1]) * eased;
+      setAnimatedPos([lat, lng]);
+      if (t < 1) {
+        animRef.current = requestAnimationFrame(step);
+      } else {
+        setAnimatedPos(currentTo);
+      }
+    };
+
+    if (animRef.current) cancelAnimationFrame(animRef.current);
+    animRef.current = requestAnimationFrame(step);
+
+    return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+  }, [position, duration]);
+
+  return (
+    <Marker position={animatedPos} icon={icon}>
+      {children}
+    </Marker>
+  );
+};
+
 // Fix for default markers in react-leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -30,28 +87,49 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
-// Custom marker icon for current location
-const createCustomIcon = (color = '#1c6954') => {
+// Custom marker icon for current location with accuracy indicator
+const createCustomIcon = (color = '#1c6954', accuracy = null) => {
+  const accuracyRadius = accuracy ? Math.min(Math.max(accuracy / 2, 5), 20) : 10;
+  
   return L.divIcon({
     html: `<div style="
+      position: relative;
       width: 20px;
       height: 20px;
-      background-color: ${color};
-      border: 3px solid white;
-      border-radius: 50%;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      position: relative;
     ">
       <div style="
+        width: 20px;
+        height: 20px;
+        background-color: ${color};
+        border: 3px solid white;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        position: relative;
+        z-index: 2;
+      ">
+        <div style="
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 8px;
+          height: 8px;
+          background-color: white;
+          border-radius: 50%;
+        "></div>
+      </div>
+      ${accuracy ? `<div style="
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 8px;
-        height: 8px;
-        background-color: white;
+        width: ${accuracyRadius * 2}px;
+        height: ${accuracyRadius * 2}px;
+        border: 2px solid ${color};
         border-radius: 50%;
-      "></div>
+        opacity: 0.3;
+        z-index: 1;
+      "></div>` : ''}
     </div>`,
     className: 'custom-marker',
     iconSize: [20, 20],
@@ -60,7 +138,7 @@ const createCustomIcon = (color = '#1c6954') => {
 };
 
 const LocationTrackingMap = ({ drivers = [], currentUserLocation = null, selectedDriver = null }) => {
-  const { getVisibleDrivers, shouldShowDriverLocation } = useLocationDisplay();
+  const { getVisibleDrivers } = useLocationDisplay();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [driverPlaces, setDriverPlaces] = useState({});
 
@@ -85,9 +163,8 @@ const LocationTrackingMap = ({ drivers = [], currentUserLocation = null, selecte
       const data = await response.json();
       
       if (data.display_name) {
-        // Extract the most relevant part of the address
         const addressParts = data.display_name.split(', ');
-        const nearestPlace = addressParts.slice(0, 3).join(', '); // Take first 3 parts
+        const nearestPlace = addressParts.slice(0, 3).join(', ');
         setDriverPlaces(prev => ({
           ...prev,
           [driverId]: nearestPlace
@@ -107,25 +184,50 @@ const LocationTrackingMap = ({ drivers = [], currentUserLocation = null, selecte
     }
   };
 
-  // Get place names for drivers when they change
   useEffect(() => {
-    getVisibleDrivers(drivers).forEach(driver => {
+    const list = drivers || [];
+    list.forEach(driver => {
       if (driver.location && driver.location.latitude && driver.location.longitude) {
-        // Only fetch if we don't already have the place for this driver
         if (!driverPlaces[driver.id]) {
           getNearestPlace(driver.id, driver.location.latitude, driver.location.longitude);
         }
       }
     });
-  }, [drivers, getVisibleDrivers]);
+  }, [drivers]);
+
+  const formatCoordinates = (latitude, longitude) => {
+    const lat = Number(latitude);
+    const lng = Number(longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return '';
+    return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  };
+  const formatAccuracy = (accuracy) => {
+    if (accuracy === undefined || accuracy === null) return 'Unknown';
+    return `${Math.round(Number(accuracy))}m`;
+  };
+  const getLocationTime = (timestamp) => {
+    if (!timestamp) return 'Unknown';
+    try {
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString();
+    } catch (error) {
+      return 'Unknown';
+    }
+  };
+
+  const visibleDriverIds = new Set((getVisibleDrivers(drivers) || []).map(d => d.id));
+  const mergedDrivers = (drivers || []).filter(d => {
+    const isSelected = selectedDriver && d.id === selectedDriver.id;
+    return visibleDriverIds.has(d.id) || isSelected;
+  });
 
   return (
     <div className="location-tracking-map">
       {/* Map Container */}
       <div className="map-container" style={{ position: 'relative' }}>
         <MapContainer
-          center={[9.145, 40.4897]} // Default Ethiopia center
-          zoom={6} // Default zoom level
+          center={[9.145, 40.4897]}
+          zoom={6}
           style={{ height: '100%', width: '100%' }}
           zoomControl={true}
           attributionControl={false}
@@ -136,70 +238,105 @@ const LocationTrackingMap = ({ drivers = [], currentUserLocation = null, selecte
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           
+          {/* Driver markers */}
+          {mergedDrivers.map(driver => {
+            const lat = driver?.location?.latitude;
+            const lng = driver?.location?.longitude;
+            if (lat === undefined || lng === undefined || lat === null || lng === null) return null;
+            const latNum = Number(lat);
+            const lngNum = Number(lng);
+            if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) return null;
 
-          {/* Driver markers - Only show drivers with location tracking enabled */}
-          {getVisibleDrivers(drivers).map(driver => {
-            if (driver.location && driver.location.latitude && driver.location.longitude) {
-              const isSelected = selectedDriver && selectedDriver.id === driver.id;
-              
-              // If a driver is selected and they are offline, don't show their marker
-              if (isSelected && driver.networkStatus !== 'online') {
-                return null;
-              }
-              
-              return (
-                <Marker
-                  key={driver.id || driver.userId}
-                  position={[driver.location.latitude, driver.location.longitude]}
-                  icon={createCustomIcon(
-                    isSelected ? '#ff6b35' : // Orange for selected driver
-                    driver.networkStatus === 'online' ? '#28c76f' : '#b71c1c'
-                  )}
-                >
-                  <Popup>
-                    <div style={{ textAlign: 'center', fontWeight: '600' }}>
-                      <div style={{ 
-                        color: isSelected ? '#ff6b35' : 
-                               driver.networkStatus === 'online' ? '#28c76f' : '#b71c1c',
-                        marginBottom: '4px'
-                      }}>
-                        {isSelected ? '🎯 ' : '🚗 '}{driver.name || 'Driver'}
-                        {isSelected && ' (Selected)'}
-                      </div>
-                      <div style={{ fontSize: '0.9em', color: '#666' }}>
-                        ID: {driver.userId || driver.id}
-                      </div>
-                      <div style={{ 
-                        fontSize: '0.9em', 
-                        color: driver.networkStatus === 'online' ? '#28c76f' : '#b71c1c',
-                        fontWeight: '600'
-                      }}>
-                        {driver.networkStatus === 'online' ? '🟢 Online' : '🔴 Offline'}
-                      </div>
+            const isSelected = selectedDriver && selectedDriver.id === driver.id;
+
+            return (
+              <AnimatedMarker
+                key={driver.id || driver.userId}
+                position={[latNum, lngNum]}
+                icon={createCustomIcon(
+                  isSelected ? '#ff6b35' : 
+                  driver.networkStatus === 'online' ? '#28c76f' : '#b71c1c',
+                  driver.location.accuracy
+                )}
+              >
+                <Popup>
+                  <div style={{ textAlign: 'center', fontWeight: '600', minWidth: '250px' }}>
+                    <div style={{ 
+                      color: isSelected ? '#ff6b35' : 
+                             driver.networkStatus === 'online' ? '#28c76f' : '#b71c1c',
+                      marginBottom: '8px',
+                      fontSize: '1.1em'
+                    }}>
+                      {isSelected ? '🎯 ' : '🚗 '}{driver.name || 'Driver'}
+                      {isSelected && ' (Selected)'}
+                    </div>
+                    <div style={{ fontSize: '0.9em', color: '#666', marginBottom: '6px' }}>
+                      ID: {driver.userId || driver.id}
+                    </div>
+                    <div style={{ 
+                      fontSize: '0.9em', 
+                      color: driver.networkStatus === 'online' ? '#28c76f' : '#b71c1c',
+                      fontWeight: '600',
+                      marginBottom: '6px'
+                    }}>
+                      {driver.networkStatus === 'online' ? '🟢 Online' : '🔴 Offline'}
+                    </div>
+                    <div style={{ 
+                      fontSize: '0.85em', 
+                      color: '#28c76f',
+                      fontWeight: '600',
+                      marginBottom: '6px',
+                      backgroundColor: '#f0f9ff',
+                      padding: '4px 8px',
+                      borderRadius: '4px'
+                    }}>
+                      📍 Real-time GPS Tracking Active
+                    </div>
+                    <div style={{ 
+                      fontSize: '0.8em', 
+                      color: '#333',
+                      marginBottom: '4px',
+                      fontFamily: 'monospace',
+                      backgroundColor: '#f8f9fa',
+                      padding: '4px 6px',
+                      borderRadius: '3px'
+                    }}>
+                      📍 {formatCoordinates(latNum, lngNum)}
+                    </div>
+                    {driver.location.accuracy !== undefined && (
                       <div style={{ 
                         fontSize: '0.8em', 
-                        color: '#28c76f',
-                        fontWeight: '600',
-                        marginTop: '4px'
+                        color: '#666',
+                        marginBottom: '4px'
                       }}>
-                        📍 Location Tracking Active
+                        🎯 Accuracy: {formatAccuracy(driver.location.accuracy)}
                       </div>
-                      {driverPlaces[driver.id] && (
-                        <div style={{ 
-                          fontSize: '0.8em', 
-                          color: '#666',
-                          marginTop: '4px',
-                          fontStyle: 'italic'
-                        }}>
-                          📍 {driverPlaces[driver.id]}
-                        </div>
-                      )}
-                    </div>
-                  </Popup>
-                </Marker>
-              );
-            }
-            return null;
+                    )}
+                    {driver.location.timestamp && (
+                      <div style={{ 
+                        fontSize: '0.8em', 
+                        color: '#666',
+                        marginBottom: '4px'
+                      }}>
+                        ⏰ Updated: {getLocationTime(driver.location.timestamp)}
+                      </div>
+                    )}
+                    {driverPlaces[driver.id] && (
+                      <div style={{ 
+                        fontSize: '0.8em', 
+                        color: '#666',
+                        marginTop: '6px',
+                        fontStyle: 'italic',
+                        borderTop: '1px solid #eee',
+                        paddingTop: '6px'
+                      }}>
+                        📍 {driverPlaces[driver.id]}
+                      </div>
+                    )}
+                  </div>
+                </Popup>
+              </AnimatedMarker>
+            );
           })}
         </MapContainer>
         
@@ -246,10 +383,6 @@ const LocationTrackingMap = ({ drivers = [], currentUserLocation = null, selecte
         )}
       </div>
 
-
-
-
-
       {/* Legend */}
       <div className="map-legend">
         <div style={{ fontWeight: '600', marginBottom: '4px' }}>Legend:</div>
@@ -260,6 +393,9 @@ const LocationTrackingMap = ({ drivers = [], currentUserLocation = null, selecte
         <div className="legend-item">
           <div className="legend-dot" style={{ background: '#ff6b35' }}></div>
           <span>Selected Online Driver</span>
+        </div>
+        <div style={{ fontSize: '0.8em', color: '#666', marginTop: '8px', fontStyle: 'italic' }}>
+          GPS accuracy circles show location precision
         </div>
       </div>
     </div>
