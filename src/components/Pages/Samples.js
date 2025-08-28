@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { db } from "../../firebase";
-import { collection, onSnapshot, query, orderBy, getDocs, updateDoc, doc, deleteDoc } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy, getDocs, updateDoc, doc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import "../Styles/Samples.css";
 
@@ -11,56 +11,10 @@ const Samples = () => {
   const [error, setError] = useState(null);
   const [expandedBarcodes, setExpandedBarcodes] = useState(new Set());
   const [activeBarcode, setActiveBarcode] = useState(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTitle, setConfirmTitle] = useState("");
-  const [confirmMessage, setConfirmMessage] = useState("");
-  const [confirmAction, setConfirmAction] = useState(null);
+
   const navigate = useNavigate();
 
-  // Simple confirmation dialog component
-  const ConfirmationDialog = ({ open, title, message, onConfirm, onCancel }) => {
-    if (!open) return null;
-    return (
-      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ background: '#fff', borderRadius: 12, width: '90%', maxWidth: 460, boxShadow: '0 12px 28px rgba(0,0,0,0.18)', overflow: 'hidden' }}>
-          <div style={{ padding: '18px 20px', borderBottom: '1px solid #eee' }}>
-            <div style={{ fontSize: '1.15em', fontWeight: 700, color: '#102542' }}>{title}</div>
-          </div>
-          <div style={{ padding: '16px 20px', color: '#333', lineHeight: 1.5 }}>{message}</div>
-          <div style={{ padding: '14px 16px', display: 'flex', gap: 10, justifyContent: 'flex-end', background: '#fafafa', borderTop: '1px solid #eee' }}>
-            <button
-              onClick={onCancel}
-              style={{
-                padding: '10px 16px',
-                borderRadius: 8,
-                border: '2px solid #1c6954',
-                background: '#fff',
-                color: '#1c6954',
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={onConfirm}
-              style={{
-                padding: '10px 16px',
-                borderRadius: 8,
-                border: 'none',
-                background: '#1c6954',
-                color: '#fff',
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
-            >
-              Confirm
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
+
 
   // Fetch all drivers for name lookup
   useEffect(() => {
@@ -222,59 +176,7 @@ const Samples = () => {
     }
   };
 
-  // Show confirm and perform an action on confirm
-  const openConfirm = (title, message, action) => {
-    setConfirmTitle(title);
-    setConfirmMessage(message);
-    setConfirmAction(() => action);
-    setConfirmOpen(true);
-  };
 
-  // Delete all samples in a barcode group
-  const handleDelete = async (group) => {
-    openConfirm(
-      'Confirm Deletion',
-      `Are you sure you want to delete all ${group.samples.length} samples for barcode ${group.barcode}? This action is permanent and cannot be undone.`,
-      async () => {
-        try {
-          const deletePromises = group.samples.map(sample => {
-            if (sample._docId) {
-              const sampleRef = doc(db, "samples", sample._docId);
-              return deleteDoc(sampleRef);
-            }
-            return Promise.resolve();
-          });
-          await Promise.all(deletePromises);
-        } catch (error) {
-          console.error("Error deleting samples:", error);
-          alert("Error deleting samples. Please try again.");
-        } finally {
-          setConfirmOpen(false);
-        }
-      }
-    );
-  };
-
-  // Delete individual sample
-  const handleDeleteSample = async (sample, barcode, total) => {
-    openConfirm(
-      'Confirm Deletion',
-      `Are you sure you want to delete sample ${sample.SID} for barcode ${barcode}? This action is permanent and cannot be undone.`,
-      async () => {
-        try {
-          if (sample._docId) {
-            const sampleRef = doc(db, "samples", sample._docId);
-            await deleteDoc(sampleRef);
-          }
-        } catch (error) {
-          console.error("Error deleting sample:", error);
-          alert("Error deleting sample. Please try again.");
-        } finally {
-          setConfirmOpen(false);
-        }
-      }
-    );
-  };
 
   if (loading) {
     return (
@@ -308,13 +210,7 @@ const Samples = () => {
 
   return (
     <div style={{ width: '100%', maxWidth: '100%', margin: '40px auto 0 auto', padding: '0' }}>
-      <ConfirmationDialog
-        open={confirmOpen}
-        title={confirmTitle}
-        message={confirmMessage}
-        onConfirm={() => confirmAction && confirmAction()}
-        onCancel={() => setConfirmOpen(false)}
-      />
+
       <button
         onClick={() => navigate(-1)}
         style={{
@@ -366,168 +262,43 @@ const Samples = () => {
             <tr><td colSpan={8} style={{ padding: '1.5em', color: '#888', textAlign: 'center' }}>No samples found.</td></tr>
           ) : (
             samples.map((group, idx) => (
-            <React.Fragment key={group.barcode || idx}>
-              <tr className={group.allApproved ? "approved" : "pending"} style={activeBarcode === group.barcode ? { backgroundColor: '#c3e6cb', borderLeft: '8px solid #28a745', boxShadow: '0 4px 12px rgba(40, 167, 69, 0.25)', transform: 'scale(1.01)' } : {}}>
-              <td style={activeBarcode === group.barcode ? { color: '#0066cc', fontWeight: 'bold', fontSize: '12.5px' } : { fontSize: '12.5px' }}>{group.barcode ? `SID-${group.barcode}` : '-'}</td>
-              <td style={{ textAlign: 'left', fontSize: '12.5px' }}>
-                  {group.samples.length === 1 ? (
-                    // Display sample type directly for single samples
-                    <span style={{ 
-                      fontSize: '12.5px',
-                      fontWeight: '500',
-                      color: '#495057',
-                      textAlign: 'left',
-                      display: 'block',
-                      paddingLeft: '20px'
-                    }}>
-                      {group.samples[0].sampleType || '-'}
-                    </span>
-                  ) : (
-                    // Show button for multiple samples
-                <button
-                  onClick={() => {
-                    if (activeBarcode === group.barcode) {
-                      // If clicking the same barcode, close it
-                      setActiveBarcode(null);
-                      setExpandedBarcodes(new Set());
-                        } else {
-                      // If clicking a different barcode, close previous and open new one
-                      setActiveBarcode(group.barcode);
-                      setExpandedBarcodes(new Set([group.barcode]));
-                    }
-                  }}
-                  className="btn"
-                  style={{ position: 'relative' }}
-                  title={group.samples.map(sample => sample.sampleType || 'Unknown').filter((type, index, arr) => arr.indexOf(type) === index).join(', ')}
-                >
-                  <span style={activeBarcode === group.barcode ? { textAlign: 'left', fontSize: '12.5px', whiteSpace: 'nowrap' } : { fontSize: '12.5px' }}>
-                    {activeBarcode === group.barcode ? 'Hide Samples' : `${group.samples.length} Samples`}
-                  </span>
-                  <div className="ripple-container">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </div>
-                </button>
-                  )}
-              </td>
-              <td style={{ width: '220px', textAlign: 'left', fontSize: '12.5px' }}>{group.location || '-'}</td>
-              <td style={{ textAlign: 'left', width: '100px', fontSize: '12.5px' }}>{group.latestDriver || '-'}</td>
-              <td style={{ width: '180px', textAlign: 'left', fontSize: '12.5px' }}>{group.latestDriverName || driverMap[group.latestDriver] || '-'}</td>
-                <td style={{ textAlign: 'left', fontSize: '12.5px' }}>{group.latestDate ? group.latestDate.toLocaleString() : '-'}</td>
-              <td style={{ width: '140px', textAlign: 'left' }}>
-                {group.allApproved ? (
-                    <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12.5px', whiteSpace: 'nowrap' }}>
-                      {group.samples[0]?.arrivedDate?.toDate ? 
-                        (group.samples.length === 1 ? 
-                          // Full timestamp for single samples with custom formatting
-                          (() => {
-                            const date = group.samples[0].arrivedDate.toDate();
-                            const formatted = date.toLocaleString('en-US', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              second: '2-digit',
-                              hour12: true
-                            });
-                            // Split the string to style 'at' and 'AM'/'PM' in black
-                            const parts = formatted.split(' at ');
-                            if (parts.length === 2) {
-                              const timeParts = parts[1].split(' ');
-                              const time = timeParts[0];
-                              const ampm = timeParts[1];
-                              return (
-                                <>
-                                  <span style={{ color: '#28a745', fontSize: '12.5px' }}>{parts[0]}</span>
-                                  <span style={{ color: '#000000', fontSize: '12.5px' }}> at </span>
-                                  <span style={{ color: '#28a745', fontSize: '12.5px' }}>{time}</span>
-                                  <span style={{ color: '#000000', fontSize: '12.5px' }}> {ampm}</span>
-                                </>
-                              );
-                            }
-                            return <span style={{ color: '#28a745', fontSize: '12.5px' }}>{formatted}</span>;
-                          })() :
-                          // Date only for multiple samples
-                          group.samples[0].arrivedDate.toDate().toLocaleDateString('en-US', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })
-                        ) : 
-                        'Approved'
-                      }
-                    </span>
-                ) : (
-                    <span style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '12.5px' }}>Not Arrived</span>
-                  )}
-                </td>
-                <td style={{ textAlign: 'center' }}>
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <React.Fragment key={group.barcode || idx}>
+                <tr className={group.allApproved ? "approved" : "pending"} style={activeBarcode === group.barcode ? { backgroundColor: '#c3e6cb', borderLeft: '8px solid #28a745', boxShadow: '0 4px 12px rgba(40, 167, 69, 0.25)', transform: 'scale(1.01)' } : {}}>
+                <td style={activeBarcode === group.barcode ? { color: '#0066cc', fontWeight: 'bold', fontSize: '12.5px' } : { fontSize: '12.5px' }}>{group.barcode ? `SID-${group.barcode}` : '-'}</td>
+                <td style={{ textAlign: 'left', fontSize: '12.5px' }}>
+                    {group.samples.length === 1 ? (
+                      // Display sample type directly for single samples
+                      <span style={{ 
+                        fontSize: '12.5px',
+                        fontWeight: '500',
+                        color: '#495057',
+                        textAlign: 'left',
+                        display: 'block',
+                        paddingLeft: '20px'
+                      }}>
+                        {group.samples[0].sampleType || '-'}
+                      </span>
+                    ) : (
+                      // Show button for multiple samples
                   <button
-                    onClick={() => !group.allApproved && handleApprove(group)}
-                    className={group.allApproved ? "btn-approve-all disabled" : "btn-approve-all"}
-                    disabled={group.allApproved}
-                    style={group.allApproved ? { 
-                      opacity: 0.6, 
-                      cursor: 'not-allowed',
-                      background: 'hsl(218, 68%, 70%)'
-                    } : {}}
+                    onClick={() => {
+                      if (activeBarcode === group.barcode) {
+                        // If clicking the same barcode, close it
+                        setActiveBarcode(null);
+                        setExpandedBarcodes(new Set());
+                          } else {
+                        // If clicking a different barcode, close previous and open new one
+                        setActiveBarcode(group.barcode);
+                        setExpandedBarcodes(new Set([group.barcode]));
+                      }
+                    }}
+                    className="btn"
+                    style={{ position: 'relative' }}
+                    title={group.samples.map(sample => sample.sampleType || 'Unknown').filter((type, index, arr) => arr.indexOf(type) === index).join(', ')}
                   >
-                    <span>{group.allApproved ? 'Approved' : 'Approve all'}</span>
+                    <span style={activeBarcode === group.barcode ? { textAlign: 'left', fontSize: '12.5px', whiteSpace: 'nowrap' } : { fontSize: '12.5px' }}>
+                      {activeBarcode === group.barcode ? 'Hide Samples' : `${group.samples.length} Samples`}
+                    </span>
                     <div className="ripple-container">
                       <span></span>
                       <span></span>
@@ -585,15 +356,118 @@ const Samples = () => {
                       <span></span>
                     </div>
                   </button>
+                    )}
+                </td>
+                <td style={{ width: '220px', textAlign: 'left', fontSize: '12.5px' }}>{group.location || '-'}</td>
+                <td style={{ textAlign: 'left', width: '100px', fontSize: '12.5px' }}>{group.latestDriver || '-'}</td>
+                <td style={{ width: '180px', textAlign: 'left', fontSize: '12.5px' }}>{group.latestDriverName || driverMap[group.latestDriver] || '-'}</td>
+                  <td style={{ textAlign: 'left', fontSize: '12.5px' }}>{group.latestDate ? group.latestDate.toLocaleString() : '-'}</td>
+                <td style={{ width: '140px', textAlign: 'left' }}>
+                  {group.allApproved ? (
+                      <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12.5px', whiteSpace: 'nowrap' }}>
+                        {group.samples[0]?.arrivedDate?.toDate ? 
+                          (group.samples.length === 1 ? 
+                            // Full timestamp for single samples with custom formatting
+                            (() => {
+                              const date = group.samples[0].arrivedDate.toDate();
+                              const formatted = date.toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                hour12: true
+                              });
+                              // Split the string to style 'at' and 'AM'/'PM' in black
+                              const parts = formatted.split(' at ');
+                              if (parts.length === 2) {
+                                const timeParts = parts[1].split(' ');
+                                const time = timeParts[0];
+                                const ampm = timeParts[1];
+                                return (
+                                  <>
+                                    <span style={{ color: '#28a745', fontSize: '12.5px' }}>{parts[0]}</span>
+                                    <span style={{ color: '#000000', fontSize: '12.5px' }}> at </span>
+                                    <span style={{ color: '#28a745', fontSize: '12.5px' }}>{time}</span>
+                                    <span style={{ color: '#000000', fontSize: '12.5px' }}> {ampm}</span>
+                                  </>
+                                );
+                              }
+                              return <span style={{ color: '#28a745', fontSize: '12.5px' }}>{formatted}</span>;
+                            })() :
+                            // Date only for multiple samples
+                            group.samples[0].arrivedDate.toDate().toLocaleDateString('en-US', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })
+                          ) : 
+                          'Approved'
+                        }
+                      </span>
+                  ) : (
+                      <span style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '12.5px' }}>Not Arrived</span>
+                    )}
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
                     <button
-                      onClick={() => handleDelete(group)}
-                      className="btn-approve-all"
-                      style={{ background: 'linear-gradient(to right, #dc3545, #c82333)', color: '#fff', padding: '0.14em 0.35em' }}
-                      onMouseOver={e => { e.currentTarget.style.background = 'linear-gradient(to right, #c82333, #bd2130)'; e.currentTarget.style.transform = 'scale(1.02)'; }}
-                      onMouseOut={e => { e.currentTarget.style.background = 'linear-gradient(to right, #dc3545, #c82333)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                      onClick={() => !group.allApproved && handleApprove(group)}
+                      className={group.allApproved ? "btn-approve-all disabled" : "btn-approve-all"}
+                      disabled={group.allApproved}
+                      style={group.allApproved ? { 
+                        opacity: 0.6, 
+                        cursor: 'not-allowed',
+                        background: 'hsl(218, 68%, 70%)'
+                      } : {}}
                     >
-                      <span>Clear</span>
+                      <span>{group.allApproved ? 'Approved' : 'Approve all'}</span>
                       <div className="ripple-container">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        
                         <span></span>
                         <span></span>
                         <span></span>
@@ -617,118 +491,129 @@ const Samples = () => {
                         <span></span>
                       </div>
                     </button>
-                  </div>
-                </td>
-              </tr>
-              
-              {/* Expandable sub-samples */}
-              {activeBarcode === group.barcode && group.samples.length > 0 && (
-                <tr>
-                  <td colSpan={8} style={{ padding: 0, border: 'none' }}>
-                    <div style={{
-                      background: '#C8C4E1',
-                      padding: '0',
-                      margin: '0',
-                      borderRadius: '8px',
-                      border: 'none',
-                      width: 'calc(100vw - 11px)',
-                      marginLeft: '5px',
-                      marginRight: '5px',
-                      transform: 'translateX(-4px)',
-                      overflowX: 'auto'
-                    }}>
-
-                      <table style={{ width: '100%', borderCollapse: 'collapse', marginLeft: '0', marginRight: '0', minWidth: '1400px' }}>
-                        <thead>
-                          <tr style={{ borderBottom: '2px solid #dee2e6' }}>
-                            <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>SID</th>
-                            <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Sample Type</th>
-                            <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Scanned Date</th>
-                            <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Arrived Date</th>
-                            <th style={{ padding: '0.5rem', textAlign: 'center', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff' }}>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {group.samples.sort((a, b) => {
-                            // Use subSampleNumber for sorting (new structure) or fallback to old logic
-                            const aNum = a.subSampleNumber || parseInt(a.SID?.split('_').pop() || '0');
-                            const bNum = b.subSampleNumber || parseInt(b.SID?.split('_').pop() || '0');
-                            return aNum - bNum; // Sort in ascending order
-                          }).map((sample, sampleIdx) => (
-                            <tr key={sample._docId || sampleIdx} style={{ borderBottom: '1px solid #f8f9fa' }}>
-                              <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem', paddingRight: '3rem' }}>{sample.SID || '-'}</td>
-                              <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: 'calc(1rem + 12px)' }}>{sample.sampleType || '-'}</td>
-                              <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem' }}>
-                                {sample.date?.toDate ? sample.date.toDate().toLocaleString() : '-'}
-                              </td>
-                              <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem' }}>
-                                {sample.arrivedDate?.toDate ? (
-                                  <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12.5px' }}>
-                                    {(() => {
-                                      const date = sample.arrivedDate.toDate();
-                                      const formatted = date.toLocaleString('en-US', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                        second: '2-digit',
-                                        hour12: true
-                                      });
-                                      // Split the string to style 'at' and 'AM'/'PM' in black
-                                      const parts = formatted.split(' at ');
-                                      if (parts.length === 2) {
-                                        const timeParts = parts[1].split(' ');
-                                        const time = timeParts[0];
-                                        const ampm = timeParts[1];
-                                        return (
-                                          <>
-                                            <span style={{ color: '#28a745', fontSize: '12.5px' }}>{parts[0]}</span>
-                                            <span style={{ color: '#000000', fontSize: '12.5px' }}> at </span>
-                                            <span style={{ color: '#28a745', fontSize: '12.5px' }}>{time}</span>
-                                            <span style={{ color: '#000000', fontSize: '12.5px' }}> {ampm}</span>
-                                          </>
-                                        );
-                                      }
-                                      return <span style={{ color: '#28a745', fontSize: '12.5px' }}>{formatted}</span>;
-                                    })()}
-                                  </span>
-                                ) : (
-                                  <span style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '12.5px' }}>Not Arrived</span>
-                                )}
-                              </td>
-                              <td style={{ padding: '0.5rem', fontSize: '12.5px', textAlign: 'center' }}>
-                                <button
-                                  onClick={() => handleDeleteSample(sample, group.barcode, group.samples.length)}
-                                  className="btn"
-                                  style={{ padding: '0.2em 0.4em', fontSize: '0.9em', background: 'linear-gradient(to right, #dc3545, #c82333)', color: '#fff' }}
-                                  onMouseOver={e => { e.currentTarget.style.background = 'linear-gradient(to right, #c82333, #bd2130)'; e.currentTarget.style.transform = 'scale(1.02)'; }}
-                                  onMouseOut={e => { e.currentTarget.style.background = 'linear-gradient(to right, #dc3545, #c82333)'; e.currentTarget.style.transform = 'scale(1)'; }}
-                                >
-                                  <span>Clear</span>
-                                  <div className="ripple-container">
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
-                                  </div>
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
                   </td>
                 </tr>
-              )}
-            </React.Fragment>
+                
+                {/* Expandable sub-samples */}
+                {activeBarcode === group.barcode && group.samples.length > 0 && (
+                  <tr>
+                    <td colSpan={8} style={{ padding: 0, border: 'none' }}>
+                      <div style={{
+                        background: '#C8C4E1',
+                        padding: '0',
+                        margin: '0',
+                        borderRadius: '8px',
+                        border: 'none',
+                        width: 'calc(100vw - 11px)',
+                        marginLeft: '5px',
+                        marginRight: '5px',
+                        transform: 'translateX(-4px)',
+                        overflowX: 'auto'
+                      }}>
+
+                        <table style={{ width: '100%', borderCollapse: 'collapse', marginLeft: '0', marginRight: '0', minWidth: '1400px' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '2px solid #dee2e6' }}>
+                              <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>SID</th>
+                              <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Sample Type</th>
+                              <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Scanned Date</th>
+                              <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Arrived Date</th>
+                              <th style={{ padding: '0.5rem', textAlign: 'center', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff' }}>Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {group.samples.sort((a, b) => {
+                              // Use subSampleNumber for sorting (new structure) or fallback to old logic
+                              const aNum = a.subSampleNumber || parseInt(a.SID?.split('_').pop() || '0');
+                              const bNum = b.subSampleNumber || parseInt(b.SID?.split('_').pop() || '0');
+                              return aNum - bNum; // Sort in ascending order
+                            }).map((sample, sampleIdx) => (
+                              <tr key={sample._docId || sampleIdx} style={{ borderBottom: '1px solid #f8f9fa' }}>
+                                <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem', paddingRight: '3rem' }}>{sample.SID || '-'}</td>
+                                <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: 'calc(1rem + 12px)' }}>{sample.sampleType || '-'}</td>
+                                <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem' }}>
+                                  {sample.date?.toDate ? sample.date.toDate().toLocaleString() : '-'}
+                                </td>
+                                <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem' }}>
+                                  {sample.arrivedDate?.toDate ? (
+                                    <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12.5px' }}>
+                                      {(() => {
+                                        const date = sample.arrivedDate.toDate();
+                                        const formatted = date.toLocaleString('en-US', {
+                                          year: 'numeric',
+                                          month: 'long',
+                                          day: 'numeric',
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                          second: '2-digit',
+                                          hour12: true
+                                        });
+                                        // Split the string to style 'at' and 'AM'/'PM' in black
+                                        const parts = formatted.split(' at ');
+                                        if (parts.length === 2) {
+                                          const timeParts = parts[1].split(' ');
+                                          const time = timeParts[0];
+                                          const ampm = timeParts[1];
+                                          return (
+                                            <>
+                                              <span style={{ color: '#28a745', fontSize: '12.5px' }}>{parts[0]}</span>
+                                              <span style={{ color: '#000000', fontSize: '12.5px' }}> at </span>
+                                              <span style={{ color: '#28a745', fontSize: '12.5px' }}>{time}</span>
+                                              <span style={{ color: '#000000', fontSize: '12.5px' }}> {ampm}</span>
+                                            </>
+                                          );
+                                        }
+                                        return <span style={{ color: '#28a745', fontSize: '12.5px' }}>{formatted}</span>;
+                                      })()}
+                                    </span>
+                                  ) : (
+                                    <span style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '12.5px' }}>Not Arrived</span>
+                                  )}
+                                </td>
+                                <td style={{ padding: '0.5rem', fontSize: '12.5px', textAlign: 'center' }}>
+                                  <button
+                                    onClick={() => {
+                                      if (!sample.arrivedDate?.toDate && sample._docId) {
+                                        const sampleRef = doc(db, "samples", sample._docId);
+                                        updateDoc(sampleRef, { arrivedDate: new Date() });
+                                      }
+                                    }}
+                                    className={sample.arrivedDate?.toDate ? "btn disabled" : "btn"}
+                                    disabled={sample.arrivedDate?.toDate}
+                                    style={{ 
+                                      padding: '0.2em 0.4em', 
+                                      fontSize: '0.9em',
+                                      ...(sample.arrivedDate?.toDate ? { 
+                                        opacity: 0.6, 
+                                        cursor: 'not-allowed',
+                                        background: 'hsl(218, 68%, 70%)'
+                                      } : {})
+                                    }}
+                                  >
+                                    <span>{sample.arrivedDate?.toDate ? 'Approved' : 'Approve'}</span>
+                                    <div className="ripple-container">
+                                      <span></span>
+                                      <span></span>
+                                      <span></span>
+                                      <span></span>
+                                      <span></span>
+                                      <span></span>
+                                      <span></span>
+                                      <span></span>
+                                      <span></span>
+                                      <span></span>
+                                    </div>
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
             ))
           )}
         </tbody>

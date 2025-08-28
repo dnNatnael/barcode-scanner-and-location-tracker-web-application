@@ -880,40 +880,7 @@ const Scanner = () => {
         Finished
       </button>
 
-      {/* GPS Status Indicator */}
-      {gpsStatus.active && (
-        <div style={{
-          position: 'fixed',
-          top: '10px',
-          left: '10px',
-          background: 'rgba(40, 199, 111, 0.95)',
-          color: 'white',
-          padding: '8px 12px',
-          borderRadius: '8px',
-          fontSize: '0.85em',
-          fontWeight: '600',
-          zIndex: 1000,
-          boxShadow: '0 2px 8px rgba(40, 199, 111, 0.3)',
-          backdropFilter: 'blur(4px)',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          maxWidth: '300px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-            <span style={{ fontSize: '1.1em' }}>📍</span>
-            <span>GPS Tracking Active</span>
-          </div>
-          {gpsStatus.coordinates && (
-            <div style={{ fontSize: '0.75em', opacity: 0.9, fontFamily: 'monospace' }}>
-              {gpsStatus.coordinates.latitude.toFixed(6)}, {gpsStatus.coordinates.longitude.toFixed(6)}
-            </div>
-          )}
-          {gpsStatus.accuracy && (
-            <div style={{ fontSize: '0.75em', opacity: 0.9 }}>
-              Accuracy: {Math.round(gpsStatus.accuracy)}m
-            </div>
-          )}
-        </div>
-      )}
+      {/* GPS Status Indicator intentionally hidden to keep UI clean while GPS tracking runs in background */}
     </div>
   );
 };

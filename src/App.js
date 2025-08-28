@@ -11,6 +11,7 @@ import ItSignup from "./components/Pages/ItSignup";
 import Resignated from "./components/Pages/Resignated";
 import DriverSampleScan from "./components/Pages/DriverSampleScan";
 import DriverView from "./components/Pages/DriverView";
+import AdminView from "./components/Pages/AdminView";
 import Scan from "./components/Pages/Scan";
 import NetworkStatus from "./components/Pages/NetworkStatus";
 import DriversList from "./components/Pages/DriversList";
@@ -37,6 +38,7 @@ function App() {
           <Route path="/resignated" element={<Resignated />} />
           <Route path="/driver-sample-scan" element={<DriverSampleScan />} />
           <Route path="/driver-view" element={<DriverView />} />
+          <Route path="/admin-view" element={<AdminView />} />
           <Route path="/drivers-list" element={<DriversList />} />
           <Route path="/samples" element={<Samples />} />
           <Route path="/one-driver" element={<OneDriver />} />

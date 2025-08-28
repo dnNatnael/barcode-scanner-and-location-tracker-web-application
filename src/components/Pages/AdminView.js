@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { auth, db } from "../../firebase";
-import { collection, query, orderBy, onSnapshot, where, getDocs, updateDoc, getDoc, doc, serverTimestamp, deleteDoc } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, where, getDocs, updateDoc, doc } from "firebase/firestore";
 import "../Styles/Samples.css";
 
 // Error Boundary Component
@@ -16,7 +16,7 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error("DriverSampleScan Error Boundary caught an error:", error, errorInfo);
+    console.error("AdminView Error Boundary caught an error:", error, errorInfo);
   }
 
   render() {
@@ -69,61 +69,11 @@ class ErrorBoundary extends React.Component {
 
 function SamplesTable({ driverName, driverId }) {
   const [samples, setSamples] = useState([]);
-  const [driverMap, setDriverMap] = useState({}); // userId -> name
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [resolvedDriverId, setResolvedDriverId] = useState(driverId);
   const [expandedBarcodes, setExpandedBarcodes] = useState(new Set());
   const [activeBarcode, setActiveBarcode] = useState(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTitle, setConfirmTitle] = useState("");
-  const [confirmMessage, setConfirmMessage] = useState("");
-  const [confirmAction, setConfirmAction] = useState(null);
-
-  // Simple confirmation dialog component
-  const ConfirmationDialog = ({ open, title, message, onConfirm, onCancel }) => {
-    if (!open) return null;
-    return (
-      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ background: '#fff', borderRadius: 12, width: '90%', maxWidth: 460, boxShadow: '0 12px 28px rgba(0,0,0,0.18)', overflow: 'hidden' }}>
-          <div style={{ padding: '18px 20px', borderBottom: '1px solid #eee' }}>
-            <div style={{ fontSize: '1.15em', fontWeight: 700, color: '#102542' }}>{title}</div>
-          </div>
-          <div style={{ padding: '16px 20px', color: '#333', lineHeight: 1.5 }}>{message}</div>
-          <div style={{ padding: '14px 16px', display: 'flex', gap: 10, justifyContent: 'flex-end', background: '#fafafa', borderTop: '1px solid #eee' }}>
-            <button
-              onClick={onCancel}
-              style={{
-                padding: '10px 16px',
-                borderRadius: 8,
-                border: '2px solid #1c6954',
-                background: '#fff',
-                color: '#1c6954',
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={onConfirm}
-              style={{
-                padding: '10px 16px',
-                borderRadius: 8,
-                border: 'none',
-                background: '#1c6954',
-                color: '#fff',
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
-            >
-              Confirm
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   // Function to find driver ID by name
   const findDriverIdByName = async (name) => {
@@ -143,7 +93,6 @@ function SamplesTable({ driverName, driverId }) {
   };
 
   useEffect(() => {
-    let driverUnsubscribe = null;
     let samplesUnsubscribe = null;
     let isActive = true;
 
@@ -172,30 +121,6 @@ function SamplesTable({ driverName, driverId }) {
         } else {
           setResolvedDriverId(driverId);
         }
-
-        // Fetch all drivers and build a map of userId -> name
-        driverUnsubscribe = onSnapshot(
-          collection(db, 'driver'), 
-          (snap) => {
-            if (!isActive) return;
-            try {
-              const map = {};
-              snap.docs.forEach(doc => {
-                const d = doc.data();
-                if (d.userId && d.name) map[d.userId] = d.name;
-              });
-              setDriverMap(map);
-            } catch (err) {
-              console.error("Error processing driver data:", err);
-              setError("Error loading driver data");
-            }
-          },
-          (error) => {
-            if (!isActive) return;
-            console.error("Driver listener error:", error);
-            setError("Error loading driver data");
-          }
-        );
 
         if (!isActive) return;
 
@@ -359,13 +284,6 @@ function SamplesTable({ driverName, driverId }) {
     // Cleanup function
     return () => {
       isActive = false;
-      if (driverUnsubscribe) {
-        try {
-          driverUnsubscribe();
-        } catch (err) {
-          console.error("Error unsubscribing from driver listener:", err);
-        }
-      }
       if (samplesUnsubscribe) {
         try {
           samplesUnsubscribe();
@@ -424,69 +342,26 @@ function SamplesTable({ driverName, driverId }) {
     );
   }
 
-  // Show confirm and perform an action on confirm
-  const openConfirm = (title, message, action) => {
-    setConfirmTitle(title);
-    setConfirmMessage(message);
-    setConfirmAction(() => action);
-    setConfirmOpen(true);
+  // Approve arrival for all samples in a barcode group (same as Samples page)
+  const handleApprove = async (group) => {
+    try {
+      const updatePromises = group.samples.map(sample => {
+        if (sample._docId) {
+          const sampleRef = doc(db, "samples", sample._docId);
+          return updateDoc(sampleRef, { arrivedDate: new Date() });
+        }
+        return Promise.resolve();
+      });
+      await Promise.all(updatePromises);
+      alert(`All ${group.samples.length} samples for barcode ${group.barcode} have been approved!`);
+    } catch (err) {
+      console.error("Error approving samples:", err);
+      alert("Error approving samples. Please try again.");
+    }
   };
 
-  // Delete all samples in a barcode group
-  const handleDelete = async (group) => {
-    openConfirm(
-      'Confirm Deletion',
-      `Are you sure you want to delete all ${group.samples.length} samples for barcode ${group.barcode}? This action is permanent and cannot be undone.`,
-      async () => {
-        try {
-          const deletePromises = group.samples.map(sample => {
-            if (sample._docId) {
-              const sampleRef = doc(db, "samples", sample._docId);
-              return deleteDoc(sampleRef);
-            }
-            return Promise.resolve();
-          });
-          await Promise.all(deletePromises);
-        } catch (error) {
-          console.error("Error deleting samples:", error);
-          alert("Error deleting samples. Please try again.");
-        } finally {
-          setConfirmOpen(false);
-        }
-      }
-    );
-  };
-
-  // Delete individual sample
-  const handleDeleteSample = async (sample, barcode) => {
-    openConfirm(
-      'Confirm Deletion',
-      `Are you sure you want to delete sample ${sample.SID} for barcode ${barcode}? This action is permanent and cannot be undone.`,
-      async () => {
-        try {
-          if (sample._docId) {
-            const sampleRef = doc(db, "samples", sample._docId);
-            await deleteDoc(sampleRef);
-          }
-        } catch (error) {
-          console.error("Error deleting sample:", error);
-          alert("Error deleting sample. Please try again.");
-        } finally {
-          setConfirmOpen(false);
-        }
-      }
-    );
-  };
-  
   return (
     <div style={{ width: '100%', maxWidth: '100%', margin: '40px auto 0 auto', padding: '0' }}>
-      <ConfirmationDialog
-        open={confirmOpen}
-        title={confirmTitle}
-        message={confirmMessage}
-        onConfirm={() => confirmAction && confirmAction()}
-        onCancel={() => setConfirmOpen(false)}
-      />
       <h2 style={{ margin: '1.5em 0 0.5em 0', textAlign: 'left', marginTop: '2em' }}>Samples collected by {driverName}</h2>
       <div style={{ overflowX: 'auto', width: '100%', marginTop: '-10px' }}>
         <table className="it-users-table" style={{ width: '100%', minWidth: '1200px' }}>
@@ -495,9 +370,9 @@ function SamplesTable({ driverName, driverId }) {
               <th style={{ fontSize: '1.5em', color: '#102542' }}>SID</th>
               <th style={{ fontSize: '1.5em', color: '#102542', textAlign: 'left', width: '140px' }}>Sample Type</th>
               <th style={{ width: '220px', fontSize: '1.5em', color: '#102542', textAlign: 'left' }}>Location</th>
-              <th style={{ fontSize: '1.5em', color: '#102542', textAlign: 'left' }}>Scanned Date</th>
+              <th style={{ fontSize: '1.5em', color: '#102542', textAlign: 'left', paddingRight: '0.3rem' }}>Scanned Date</th>
               <th style={{ width: '260px', fontSize: '1.5em', color: '#102542', textAlign: 'left', paddingRight: '8rem' }}>Arrived Date</th>
-              <th style={{ fontSize: '1.8em', color: '#102542', textAlign: 'left', paddingLeft: '1rem' }}>Action</th>
+              <th style={{ fontSize: '1.5em', color: '#102542', textAlign: 'center', padding: '0.2rem 0.3rem', width: '120px' }}>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -546,8 +421,8 @@ function SamplesTable({ driverName, driverId }) {
                       )}
                     </td>
                     <td style={{ width: '220px', textAlign: 'left', fontSize: '12.5px' }}>{group.location || '-'}</td>
-                    <td style={{ textAlign: 'left', fontSize: '12.5px' }}>{group.latestDate ? group.latestDate.toLocaleString() : '-'}</td>
-                    <td style={{ width: '260px', textAlign: 'left', paddingRight: '8rem', whiteSpace: 'nowrap' }}>
+                    <td style={{ textAlign: 'left', fontSize: '12.5px', paddingRight: '0.3rem' }}>{group.latestDate ? group.latestDate.toLocaleString() : '-'}</td>
+                    <td style={{ width: '260px', textAlign: 'left', paddingRight: '8rem' }}>
                       {group.allApproved ? (
                         <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12.5px', whiteSpace: 'nowrap' }}>
                           {group.samples[0]?.arrivedDate?.toDate ? 
@@ -596,16 +471,63 @@ function SamplesTable({ driverName, driverId }) {
                         <span style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '12.5px' }}>Not Arrived</span>
                       )}
                     </td>
-                    <td style={{ textAlign: 'left' }}>
+                    <td style={{ textAlign: 'center', padding: '0.2rem' }}>
                       <button
-                        onClick={() => handleDelete(group)}
-                        className="btn-approve-all"
-                        style={{ background: 'linear-gradient(to right, #dc3545, #c82333)', color: '#fff', padding: '0.14em 0.35em' }}
-                        onMouseOver={e => { e.currentTarget.style.background = 'linear-gradient(to right, #c82333, #bd2130)'; e.currentTarget.style.transform = 'scale(1.02)'; }}
-                        onMouseOut={e => { e.currentTarget.style.background = 'linear-gradient(to right, #dc3545, #c82333)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                        onClick={() => !group.allApproved && handleApprove(group)}
+                        className={group.allApproved ? "btn-approve-all disabled" : "btn-approve-all"}
+                        disabled={group.allApproved}
+                        style={group.allApproved ? { 
+                          opacity: 0.6, 
+                          cursor: 'not-allowed',
+                          background: 'hsl(218, 68%, 70%)'
+                        } : { padding: '0.14em 0.35em' }}
                       >
-                        <span>Clear</span>
+                        <span>{group.allApproved ? 'Approved' : 'Approve all'}</span>
                         <div className="ripple-container">
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                          
                           <span></span>
                           <span></span>
                           <span></span>
@@ -642,9 +564,9 @@ function SamplesTable({ driverName, driverId }) {
                               <tr style={{ borderBottom: '2px solid #dee2e6' }}>
                                 <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>SID</th>
                                 <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Sample Type</th>
-                                <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Scanned Date</th>
-                                <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Arrived Date</th>
-                                <th style={{ padding: '0.5rem', textAlign: 'center', fontSize: '1.8em', background: '#4F4A6B', color: '#ffffff' }}>Action</th>
+                                <th style={{ padding: '0.3rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem', paddingRight: '0.3rem' }}>Scanned Date</th>
+                                <th style={{ padding: '0.3rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Arrived Date</th>
+                                <th style={{ padding: '0.3rem', textAlign: 'center', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', width: '120px' }}>Action</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -657,10 +579,10 @@ function SamplesTable({ driverName, driverId }) {
                                 <tr key={sample._docId || sampleIdx} style={{ borderBottom: '1px solid #f8f9fa' }}>
                                   <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem', paddingRight: '3rem' }}>{sample.SID || '-'}</td>
                                   <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: 'calc(1rem + 12px)' }}>{sample.sampleType || '-'}</td>
-                                  <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem', whiteSpace: 'nowrap' }}>
+                                  <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem', paddingRight: '0.3rem' }}>
                                     {sample.date?.toDate ? sample.date.toDate().toLocaleString() : '-'}
                                   </td>
-                                  <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem' }}>
+                                  <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem', whiteSpace: 'nowrap' }}>
                                     {sample.arrivedDate?.toDate ? (
                                       <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12.5px' }}>
                                         {(() => {
@@ -674,21 +596,6 @@ function SamplesTable({ driverName, driverId }) {
                                             second: '2-digit',
                                             hour12: true
                                           });
-                                          // Split the string to style 'at' and 'AM'/'PM' in black
-                                          const parts = formatted.split(' at ');
-                                          if (parts.length === 2) {
-                                            const timeParts = parts[1].split(' ');
-                                            const time = timeParts[0];
-                                            const ampm = timeParts[1];
-                                            return (
-                                              <>
-                                                <span style={{ color: '#28a745', fontSize: '12.5px' }}>{parts[0]}</span>
-                                                <span style={{ color: '#000000', fontSize: '12.5px' }}> at </span>
-                                                <span style={{ color: '#28a745', fontSize: '12.5px' }}>{time}</span>
-                                                <span style={{ color: '#000000', fontSize: '12.5px' }}> {ampm}</span>
-                                              </>
-                                            );
-                                          }
                                           return <span style={{ color: '#28a745', fontSize: '12.5px' }}>{formatted}</span>;
                                         })()}
                                       </span>
@@ -696,15 +603,27 @@ function SamplesTable({ driverName, driverId }) {
                                       <span style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '12.5px' }}>Not Arrived</span>
                                     )}
                                   </td>
-                                  <td style={{ padding: '0.5rem', fontSize: '12.5px', textAlign: 'center' }}>
+                                  <td style={{ padding: '0.3rem', fontSize: '12.5px', textAlign: 'center' }}>
                                     <button
-                                      onClick={() => handleDeleteSample(sample, group.barcode)}
-                                      className="btn"
-                                      style={{ padding: '0.2em 0.4em', fontSize: '0.9em', background: 'linear-gradient(to right, #dc3545, #c82333)', color: '#fff' }}
-                                      onMouseOver={e => { e.currentTarget.style.background = 'linear-gradient(to right, #c82333, #bd2130)'; e.currentTarget.style.transform = 'scale(1.02)'; }}
-                                      onMouseOut={e => { e.currentTarget.style.background = 'linear-gradient(to right, #dc3545, #c82333)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                      onClick={() => {
+                                        if (!sample.arrivedDate?.toDate && sample._docId) {
+                                          const sampleRef = doc(db, "samples", sample._docId);
+                                          updateDoc(sampleRef, { arrivedDate: new Date() });
+                                        }
+                                      }}
+                                      className={sample.arrivedDate?.toDate ? "btn disabled" : "btn"}
+                                      disabled={sample.arrivedDate?.toDate}
+                                      style={{ 
+                                        padding: '0.14em 0.35em', 
+                                        fontSize: '0.9em',
+                                        ...(sample.arrivedDate?.toDate ? { 
+                                          opacity: 0.6, 
+                                          cursor: 'not-allowed',
+                                          background: 'hsl(218, 68%, 70%)'
+                                        } : {})
+                                      }}
                                     >
-                                      <span>Clear</span>
+                                      <span>{sample.arrivedDate?.toDate ? 'Approved' : 'Approve'}</span>
                                       <div className="ripple-container">
                                         <span></span>
                                         <span></span>
@@ -740,139 +659,16 @@ function SamplesTable({ driverName, driverId }) {
   );
 }
 
-const DriverSampleScan = () => {
+const AdminView = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const driverName = location.state?.driverName || "Driver";
   const driverId = location.state?.driverId || "";
 
   // Debug logging
-  console.log("DriverSampleScan - driverName:", driverName);
-  console.log("DriverSampleScan - driverId:", driverId);
-  console.log("DriverSampleScan - location.state:", location.state);
-
-  // Determine if this is accessed by admin or driver
-  const isAdminAccess = location.state?.isAdminAccess || false;
-  const isDriverAccess = !isAdminAccess;
-
-  // Refresh detection and session management - ONLY for driver access
-  useEffect(() => {
-    // Only apply refresh logic if this is driver access (from Scanner page)
-    if (!isDriverAccess) return;
-
-    const user = auth.currentUser;
-    if (!user) return;
-
-    // Check if this is a page refresh
-    const isRefresh = sessionStorage.getItem('driversamplescan-refreshing');
-    
-    if (isRefresh) {
-      // This is a refresh - mark driver offline first
-      const markDriverOffline = async () => {
-        try {
-          const driverCol = collection(db, 'driver');
-          const q = query(driverCol, where('authUid', '==', user.uid));
-          const querySnapshot = await getDocs(q);
-          if (!querySnapshot.empty) {
-            const driverDoc = querySnapshot.docs[0];
-            await updateDoc(driverDoc.ref, {
-              online: false,
-              networkStatus: 'offline',
-              showLocation: false,
-              lastActive: serverTimestamp()
-            });
-          }
-        } catch (err) {
-          console.error("Error marking driver offline on refresh:", err);
-        }
-      };
-      
-      markDriverOffline();
-      sessionStorage.removeItem('driversamplescan-refreshing');
-    }
-
-    // Mark driver as online when page loads (new session)
-    const markDriverOnline = async () => {
-      try {
-        const driverCol = collection(db, 'driver');
-        const q = query(driverCol, where('authUid', '==', user.uid));
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-          const driverDoc = querySnapshot.docs[0];
-          await updateDoc(driverDoc.ref, {
-            online: true,
-            networkStatus: 'online',
-            showLocation: true,
-            lastActive: serverTimestamp()
-          });
-        }
-      } catch (err) {
-        console.error("Error marking driver online on page load:", err);
-      }
-    };
-
-    // Small delay to ensure offline status is set before going online
-    setTimeout(() => {
-      markDriverOnline();
-    }, 1000);
-
-  }, [isDriverAccess]);
-
-  // Set refresh flag before page unload - ONLY for driver access
-  useEffect(() => {
-    // Only apply refresh logic if this is driver access (from Scanner page)
-    if (!isDriverAccess) return;
-
-    const handleBeforeUnload = (e) => {
-      // Set flag to indicate this is a refresh
-      sessionStorage.setItem('driversamplescan-refreshing', 'true');
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [isDriverAccess]);
-
-  // Heartbeat logic - only update lastActive, don't change network status
-  useEffect(() => {
-    let intervalId;
-    let isActive = true;
-
-    const updateLastActive = async () => {
-      if (!isActive) return;
-      
-      const user = auth.currentUser;
-      if (!user) return;
-      
-      try {
-        const driverCol = collection(db, 'driver');
-        const q = query(driverCol, where('authUid', '==', user.uid));
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-          const driverDoc = querySnapshot.docs[0];
-          // Only update lastActive, don't change network status
-          await updateDoc(driverDoc.ref, {
-            lastActive: new Date(),
-            online: true, // Keep online status but don't change networkStatus
-          });
-        }
-      } catch (err) {
-        console.error("Error updating last active:", err);
-        // Don't show error to user for heartbeat
-      }
-    };
-
-    updateLastActive(); // Initial ping
-    intervalId = setInterval(updateLastActive, 10000); // Ping every 10s
-    
-    return () => {
-      isActive = false;
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, []);
+  console.log("AdminView - driverName:", driverName);
+  console.log("AdminView - driverId:", driverId);
+  console.log("AdminView - location.state:", location.state);
 
   return (
     <ErrorBoundary>
@@ -912,4 +708,4 @@ const DriverSampleScan = () => {
   );
 };
 
-export default DriverSampleScan; 
+export default AdminView;

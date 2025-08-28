@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { auth, db } from "../../firebase";
-import { getDoc, collection, query, where, getDocs, updateDoc, doc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, getDocs, updateDoc, serverTimestamp } from "firebase/firestore";
 import { useLocationDisplay } from "../../contexts/LocationDisplayContext";
 
 const NetworkStatus = () => {
@@ -72,11 +72,7 @@ const NetworkStatus = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-      <h1>Network Status</h1>
-      <p style={{ marginBottom: '2rem', textAlign: 'center', color: '#666' }}>
-        Click "Start" to begin real-time GPS location tracking with high accuracy positioning.
-      </p>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', width: '100vw', maxWidth: '100vw' }}>
       <button
         style={{ 
           padding: '1em 2.5em', 
@@ -87,7 +83,6 @@ const NetworkStatus = () => {
           borderRadius: 8, 
           fontWeight: 600, 
           cursor: 'pointer', 
-          marginTop: 24,
           boxShadow: '0 4px 12px rgba(28, 105, 84, 0.3)',
           transition: 'all 0.3s ease'
         }}
@@ -103,7 +98,7 @@ const NetworkStatus = () => {
         }}
         onClick={handleStart}
       >
-        Start GPS Tracking
+        Start Scanning
       </button>
     </div>
   );

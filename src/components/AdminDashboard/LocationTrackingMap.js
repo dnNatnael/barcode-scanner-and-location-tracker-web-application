@@ -98,25 +98,25 @@ const createCustomIcon = (color = '#1c6954', accuracy = null) => {
       height: 20px;
     ">
       <div style="
-        width: 20px;
-        height: 20px;
-        background-color: ${color};
-        border: 3px solid white;
-        border-radius: 50%;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        position: relative;
+      width: 20px;
+      height: 20px;
+      background-color: ${color};
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      position: relative;
         z-index: 2;
-      ">
-        <div style="
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 8px;
-          height: 8px;
-          background-color: white;
-          border-radius: 50%;
-        "></div>
+    ">
+      <div style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 8px;
+        height: 8px;
+        background-color: white;
+        border-radius: 50%;
+      "></div>
       </div>
       ${accuracy ? `<div style="
         position: absolute;
@@ -247,44 +247,44 @@ const LocationTrackingMap = ({ drivers = [], currentUserLocation = null, selecte
             const lngNum = Number(lng);
             if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) return null;
 
-            const isSelected = selectedDriver && selectedDriver.id === driver.id;
-
-            return (
+              const isSelected = selectedDriver && selectedDriver.id === driver.id;
+              
+              return (
               <AnimatedMarker
-                key={driver.id || driver.userId}
+                  key={driver.id || driver.userId}
                 position={[latNum, lngNum]}
-                icon={createCustomIcon(
+                  icon={createCustomIcon(
                   isSelected ? '#ff6b35' : 
                   driver.networkStatus === 'online' ? '#28c76f' : '#b71c1c',
                   driver.location.accuracy
-                )}
-              >
-                <Popup>
+                  )}
+                >
+                  <Popup>
                   <div style={{ textAlign: 'center', fontWeight: '600', minWidth: '250px' }}>
-                    <div style={{ 
-                      color: isSelected ? '#ff6b35' : 
-                             driver.networkStatus === 'online' ? '#28c76f' : '#b71c1c',
+                      <div style={{ 
+                        color: isSelected ? '#ff6b35' : 
+                               driver.networkStatus === 'online' ? '#28c76f' : '#b71c1c',
                       marginBottom: '8px',
                       fontSize: '1.1em'
-                    }}>
-                      {isSelected ? '🎯 ' : '🚗 '}{driver.name || 'Driver'}
-                      {isSelected && ' (Selected)'}
-                    </div>
+                      }}>
+                        {isSelected ? '🎯 ' : '🚗 '}{driver.name || 'Driver'}
+                        {isSelected && ' (Selected)'}
+                      </div>
                     <div style={{ fontSize: '0.9em', color: '#666', marginBottom: '6px' }}>
-                      ID: {driver.userId || driver.id}
-                    </div>
-                    <div style={{ 
-                      fontSize: '0.9em', 
-                      color: driver.networkStatus === 'online' ? '#28c76f' : '#b71c1c',
+                        ID: {driver.userId || driver.id}
+                      </div>
+                      <div style={{ 
+                        fontSize: '0.9em', 
+                        color: driver.networkStatus === 'online' ? '#28c76f' : '#b71c1c',
                       fontWeight: '600',
                       marginBottom: '6px'
-                    }}>
-                      {driver.networkStatus === 'online' ? '🟢 Online' : '🔴 Offline'}
-                    </div>
-                    <div style={{ 
+                      }}>
+                        {driver.networkStatus === 'online' ? '🟢 Online' : '🔴 Offline'}
+                      </div>
+                      <div style={{ 
                       fontSize: '0.85em', 
-                      color: '#28c76f',
-                      fontWeight: '600',
+                        color: '#28c76f',
+                        fontWeight: '600',
                       marginBottom: '6px',
                       backgroundColor: '#f0f9ff',
                       padding: '4px 8px',
@@ -321,22 +321,22 @@ const LocationTrackingMap = ({ drivers = [], currentUserLocation = null, selecte
                         ⏰ Updated: {getLocationTime(driver.location.timestamp)}
                       </div>
                     )}
-                    {driverPlaces[driver.id] && (
-                      <div style={{ 
-                        fontSize: '0.8em', 
-                        color: '#666',
+                      {driverPlaces[driver.id] && (
+                        <div style={{ 
+                          fontSize: '0.8em', 
+                          color: '#666',
                         marginTop: '6px',
                         fontStyle: 'italic',
                         borderTop: '1px solid #eee',
                         paddingTop: '6px'
-                      }}>
-                        📍 {driverPlaces[driver.id]}
-                      </div>
-                    )}
-                  </div>
-                </Popup>
+                        }}>
+                          📍 {driverPlaces[driver.id]}
+                        </div>
+                      )}
+                    </div>
+                  </Popup>
               </AnimatedMarker>
-            );
+              );
           })}
         </MapContainer>
         
