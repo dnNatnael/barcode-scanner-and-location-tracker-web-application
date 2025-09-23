@@ -132,12 +132,12 @@
 /* Filter Card - Only for IT and Resignated pages */
 .retro-wave-page .filter-card {
     width: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(8px);
-    border: 2px solid #22d3ee;
+    background: #1e3a8a;
+    border: 2px solid #1e3a8a;
     border-radius: 8px;
     padding: 24px;
     margin-bottom: 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .retro-wave-page .filter-grid {
@@ -159,28 +159,33 @@
     transform: translateY(-50%);
     height: 20px;
     width: 20px;
-    color: #22d3ee;
+    color: #1e3a8a;
 }
 
 .retro-wave-page .search-field {
     width: 100%;
     padding-left: 48px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 2px solid #22d3ee;
-    color: #67e8f9;
+    background: #ffffff;
+    border: 2px solid #1e3a8a;
+    color: #1e3a8a;
     height: 48px;
-    letter-spacing: 0.1em;
+    font-size: 14px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     border-radius: 4px;
+    transition: all 0.3s ease;
 }
 
 .retro-wave-page .search-field::placeholder {
-    color: #0891b2;
+    color: #6b7280;
+    font-size: 14px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .retro-wave-page .search-field:focus {
     outline: none;
-    border-color: #ec4899;
-    box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.2);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    background: #ffffff;
 }
 
 .retro-wave-page .filter-select {
@@ -190,35 +195,37 @@
 
 .retro-wave-page .select-field {
     width: 100%;
-    background: rgba(0, 0, 0, 0.3);
+    background: #ffffff;
     border: 2px solid;
     height: 48px;
-    letter-spacing: 0.1em;
+    font-size: 14px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     padding: 0 16px;
     appearance: none;
     cursor: pointer;
     border-radius: 4px;
+    transition: all 0.3s ease;
 }
 
 .retro-wave-page .select-blue {
-    border-color: #60a5fa;
-    color: #93c5fd;
+    border-color: #1e3a8a;
+    color: #1e3a8a;
 }
 
 .retro-wave-page .select-indigo {
-    border-color: #a78bfa;
-    color: #c4b5fd;
+    border-color: #1e3a8a;
+    color: #1e3a8a;
 }
 
 .retro-wave-page .select-sky {
-    border-color: #0ea5e9;
-    color: #7dd3fc;
+    border-color: #1e3a8a;
+    color: #1e3a8a;
 }
 
 .retro-wave-page .select-field:focus {
     outline: none;
-    border-color: #ec4899;
-    box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.2);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .retro-wave-page .select-field option {
@@ -231,7 +238,7 @@
     justify-content: space-between;
     margin-top: 16px;
     padding-top: 16px;
-    border-top: 1px solid #374151;
+    border-top: 1px solid #e1e1e1;
     width: 100%;
 }
 
@@ -239,9 +246,9 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    color: #67e8f9;
+    color: #ffffff;
     font-size: 14px;
-    letter-spacing: 0.1em;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     flex-wrap: wrap;
 }
 
@@ -252,33 +259,36 @@
 }
 
 .retro-wave-page .filter-badge {
-    background: rgba(34, 211, 238, 0.2);
-    color: #67e8f9;
-    border: 1px solid #22d3ee;
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    border: 1px solid #ffffff;
     padding: 4px 12px;
     border-radius: 4px;
     font-size: 12px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     transition: background-color 0.3s;
     white-space: nowrap;
 }
 
 .retro-wave-page .clear-button {
-    background: rgba(0, 0, 0, 0.3);
-    color: #f9a8d4;
-    border: 1px solid #ec4899;
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    border: 1px solid #ffffff;
     padding: 8px 16px;
-    letter-spacing: 0.1em;
+    font-size: 14px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 4px;
     border-radius: 4px;
-    transition: background-color 0.3s;
+    transition: all 0.3s ease;
     white-space: nowrap;
 }
 
 .retro-wave-page .clear-button:hover {
-    background: rgba(55, 65, 81, 0.3);
+    background: #ffffff;
+    color: #1e3a8a;
 }
 
 .retro-wave-page .clear-button svg {
@@ -309,7 +319,7 @@
 
 .retro-wave-page .data-table {
     width: 100%;
-    min-width: 800px;
+    min-width: 1200px;
     max-width: 100%;
     border-collapse: collapse;
     overflow: visible;
@@ -405,13 +415,13 @@
     align-items: center;
     justify-content: flex-end;
     gap: 8px;
-    opacity: 0;
+    opacity: 1; /* visible by default */
     transition: opacity 0.2s;
     flex-wrap: wrap;
 }
 
 .retro-wave-page .table-row:hover .action-buttons {
-    opacity: 1;
+    opacity: 1; /* keep hover behavior for smoothness */
 }
 
 .retro-wave-page .action-btn {
@@ -855,6 +865,269 @@
     .retro-wave-page .stat-label {
         font-size: 12px;
     }
+}
+
+/* Modern Table Styling with Retro Wave Theme */
+.excel-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  table-layout: fixed;
+}
+
+.excel-table thead {
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+}
+
+.excel-table th {
+  padding: 1rem 1.25rem;
+  text-align: left;
+  color: white;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.excel-table th:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.excel-table th.sort-asc::after {
+  content: '↑';
+  margin-left: 0.5rem;
+  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.excel-table th.sort-desc::after {
+  content: '↓';
+  margin-left: 0.5rem;
+  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.excel-table td {
+  padding: 1rem 1.25rem;
+  color: #1f2937;
+  font-size: 0.9rem;
+  border-bottom: 1px solid rgba(209, 213, 219, 0.3);
+  vertical-align: middle;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.excel-table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.excel-table tbody tr:hover {
+  background-color: rgba(219, 234, 254, 0.5);
+}
+
+.excel-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.table-wrapper {
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.table-footer {
+  background: #f8f9fa;
+  padding: 16px;
+  text-align: center;
+  border-top: 1px solid #e1e1e1;
+  color: #495057;
+  font-weight: 500;
+}
+
+/* Status indicators */
+.status-active {
+  color: #22c55e;
+  font-weight: 700;
+}
+
+.status-inactive {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.status-pending {
+  color: #facc15;
+  font-weight: 700;
+}
+
+/* Button styles */
+/* Unified button style to match Samples page */
+.btn {
+  border-radius: 0.5em;
+  font-size: 14px;
+  height: 2em;
+  width: 9em;
+  position: relative;
+  border: none;
+  background-color: hsl(218, 68%, 52%);
+  overflow: hidden;
+  isolation: isolate;
+  color: white;
+  box-shadow: 1px 2px 4px #0007;
+  transition: background-color 0.2s;
+  cursor: pointer;
+  padding: 0.4em 1.1em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  background-color: hsl(218, 68%, 47%);
+}
+
+/* Danger variant for destructive actions */
+.btn.btn-danger {
+  background-color: #dc2626; /* red-600 */
+}
+.btn.btn-danger:hover {
+  background-color: #b91c1c; /* red-700 */
+}
+
+/* Ensure danger button overrides ExcelTable.css rule `.excel-table .btn` */
+.excel-table .btn.btn-danger {
+  background-color: #dc2626 !important;
+}
+.excel-table .btn.btn-danger:hover {
+  background-color: #b91c1c !important;
+}
+
+.btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Ripple effect */
+.ripple-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.ripple-container span {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(0);
+  animation: ripple 0.6s linear;
+  pointer-events: none;
+}
+
+.ripple-container span:nth-child(1) { top: 20%; left: 20%; animation-delay: 0s; }
+.ripple-container span:nth-child(2) { top: 20%; left: 40%; animation-delay: 0.1s; }
+.ripple-container span:nth-child(3) { top: 20%; left: 60%; animation-delay: 0.2s; }
+.ripple-container span:nth-child(4) { top: 20%; left: 80%; animation-delay: 0.3s; }
+.ripple-container span:nth-child(5) { top: 40%; left: 20%; animation-delay: 0.4s; }
+.ripple-container span:nth-child(6) { top: 40%; left: 40%; animation-delay: 0.5s; }
+.ripple-container span:nth-child(7) { top: 40%; left: 60%; animation-delay: 0.6s; }
+.ripple-container span:nth-child(8) { top: 40%; left: 80%; animation-delay: 0.7s; }
+.ripple-container span:nth-child(9) { top: 60%; left: 20%; animation-delay: 0.8s; }
+.ripple-container span:nth-child(10) { top: 60%; left: 40%; animation-delay: 0.9s; }
+.ripple-container span:nth-child(11) { top: 60%; left: 60%; animation-delay: 1s; }
+.ripple-container span:nth-child(12) { top: 60%; left: 80%; animation-delay: 1.1s; }
+.ripple-container span:nth-child(13) { top: 80%; left: 20%; animation-delay: 1.2s; }
+.ripple-container span:nth-child(14) { top: 80%; left: 40%; animation-delay: 1.3s; }
+.ripple-container span:nth-child(15) { top: 80%; left: 60%; animation-delay: 1.4s; }
+.ripple-container span:nth-child(16) { top: 80%; left: 80%; animation-delay: 1.5s; }
+.ripple-container span:nth-child(17) { top: 30%; left: 30%; animation-delay: 1.6s; }
+.ripple-container span:nth-child(18) { top: 30%; left: 50%; animation-delay: 1.7s; }
+.ripple-container span:nth-child(19) { top: 30%; left: 70%; animation-delay: 1.8s; }
+.ripple-container span:nth-child(20) { top: 50%; left: 30%; animation-delay: 1.9s; }
+.ripple-container span:nth-child(21) { top: 50%; left: 50%; animation-delay: 2s; }
+.ripple-container span:nth-child(22) { top: 50%; left: 70%; animation-delay: 2.1s; }
+.ripple-container span:nth-child(23) { top: 70%; left: 30%; animation-delay: 2.2s; }
+.ripple-container span:nth-child(24) { top: 70%; left: 50%; animation-delay: 2.3s; }
+.ripple-container span:nth-child(25) { top: 70%; left: 70%; animation-delay: 2.4s; }
+.ripple-container span:nth-child(26) { top: 25%; left: 25%; animation-delay: 2.5s; }
+.ripple-container span:nth-child(27) { top: 25%; left: 45%; animation-delay: 2.6s; }
+.ripple-container span:nth-child(28) { top: 25%; left: 65%; animation-delay: 2.7s; }
+.ripple-container span:nth-child(29) { top: 25%; left: 85%; animation-delay: 2.8s; }
+.ripple-container span:nth-child(30) { top: 45%; left: 25%; animation-delay: 2.9s; }
+.ripple-container span:nth-child(31) { top: 45%; left: 45%; animation-delay: 3s; }
+.ripple-container span:nth-child(32) { top: 45%; left: 65%; animation-delay: 3.1s; }
+.ripple-container span:nth-child(33) { top: 45%; left: 85%; animation-delay: 3.2s; }
+.ripple-container span:nth-child(34) { top: 65%; left: 25%; animation-delay: 3.3s; }
+.ripple-container span:nth-child(35) { top: 65%; left: 45%; animation-delay: 3.4s; }
+.ripple-container span:nth-child(36) { top: 65%; left: 65%; animation-delay: 3.5s; }
+.ripple-container span:nth-child(37) { top: 65%; left: 85%; animation-delay: 3.6s; }
+.ripple-container span:nth-child(38) { top: 85%; left: 25%; animation-delay: 3.7s; }
+.ripple-container span:nth-child(39) { top: 85%; left: 45%; animation-delay: 3.8s; }
+.ripple-container span:nth-child(40) { top: 85%; left: 65%; animation-delay: 3.9s; }
+.ripple-container span:nth-child(41) { top: 85%; left: 85%; animation-delay: 4s; }
+
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Action buttons container */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .excel-table {
+    font-size: 12px;
+  }
+  
+  .excel-table th,
+  .excel-table td {
+    padding: 8px 6px;
+  }
+  
+  .btn {
+    width: 8em;
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+  
+  .table-container {
+    margin: 0 -25px;
+    padding: 0 25px;
+  }
 }
 
 /* Original IT.css styles for backward compatibility - these will only apply to pages that don't use retro-wave-page class */

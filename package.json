@@ -2,6 +2,7 @@
   "name": "barcode-scanner-and-location-tracker-web-application",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://dnNatnael.github.io/barcode-scanner-and-location-tracker-web-application",
   "dependencies": {
     "@react-google-maps/api": "^2.20.7",
     "@testing-library/dom": "^10.4.0",
@@ -10,7 +11,6 @@
     "@testing-library/user-event": "^13.5.0",
     "firebase": "^11.10.0",
     "firebase-admin": "^13.4.0",
-    "gh-pages": "^6.3.0",
     "html5-qrcode": "^2.3.8",
     "leaflet": "^1.9.4",
     "react": "^19.1.0",
@@ -45,5 +45,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
   }
 }

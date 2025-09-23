@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import '../Styles/LocationTrackingMap.css';
@@ -22,8 +22,8 @@ const MapController = ({ selectedDriver }) => {
   return null;
 };
 
-// Animated marker that interpolates between positions for smooth movement
-const AnimatedMarker = ({ position, icon, children, duration = 800 }) => {
+// Enhanced animated marker with faster updates for real-time movement
+const AnimatedMarker = ({ position, icon, children, duration = 400, isMoving = false }) => {
   const [animatedPos, setAnimatedPos] = useState(position);
   const animRef = useRef(null);
   const startRef = useRef(null);
@@ -49,11 +49,15 @@ const AnimatedMarker = ({ position, icon, children, duration = 800 }) => {
     fromRef.current = currentFrom;
     toRef.current = currentTo;
 
+    // Use faster animation for moving drivers
+    const animationDuration = isMoving ? Math.min(duration, 200) : duration;
+
     const step = (ts) => {
       if (!startRef.current) startRef.current = ts;
       const elapsed = ts - startRef.current;
-      const t = Math.min(1, elapsed / duration);
-      const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      const t = Math.min(1, elapsed / animationDuration);
+      // Use linear interpolation for moving drivers for smoother real-time updates
+      const eased = isMoving ? t : (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t);
       const lat = currentFrom[0] + (currentTo[0] - currentFrom[0]) * eased;
       const lng = currentFrom[1] + (currentTo[1] - currentFrom[1]) * eased;
       setAnimatedPos([lat, lng]);
@@ -70,7 +74,7 @@ const AnimatedMarker = ({ position, icon, children, duration = 800 }) => {
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
     };
-  }, [position, duration]);
+  }, [position, duration, isMoving]);
 
   return (
     <Marker position={animatedPos} icon={icon}>
@@ -87,36 +91,63 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
-// Custom marker icon for current location with accuracy indicator
-const createCustomIcon = (color = '#1c6954', accuracy = null) => {
+// Enhanced custom marker icon with movement indicators
+const createCustomIcon = (color = '#1c6954', accuracy = null, movementState = null, detailedAddress = null) => {
   const accuracyRadius = accuracy ? Math.min(Math.max(accuracy / 2, 5), 20) : 10;
+  const isMoving = movementState?.isMoving || false;
+  const speed = movementState?.speed || 0;
+  
+  // Dynamic size based on movement - larger when moving
+  const markerSize = isMoving ? 24 : 20;
+  const pulseAnimation = isMoving ? 'pulse 1.5s ease-in-out infinite' : 'none';
+  const movementIndicator = isMoving ? '🚗' : '📍';
   
   return L.divIcon({
-    html: `<div style="
+    html: `
+    <style>
+      @keyframes pulse {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.2); opacity: 0.7; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      @keyframes ripple {
+        0% { transform: scale(0.8); opacity: 1; }
+        100% { transform: scale(2.5); opacity: 0; }
+      }
+    </style>
+    <div style="
       position: relative;
-      width: 20px;
-      height: 20px;
+      width: ${markerSize}px;
+      height: ${markerSize}px;
     ">
-      <div style="
-      width: 20px;
-      height: 20px;
-      background-color: ${color};
-      border: 3px solid white;
-      border-radius: 50%;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      position: relative;
-        z-index: 2;
-    ">
-      <div style="
+      ${isMoving ? `<div style="
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 8px;
-        height: 8px;
-        background-color: white;
+        width: ${markerSize}px;
+        height: ${markerSize}px;
+        border: 2px solid ${color};
         border-radius: 50%;
-      "></div>
+        animation: ripple 2s linear infinite;
+        z-index: 0;
+      "></div>` : ''}
+      <div style="
+        width: ${markerSize}px;
+        height: ${markerSize}px;
+        background-color: ${color};
+        border: 3px solid white;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        position: relative;
+        z-index: 2;
+        animation: ${pulseAnimation};
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: ${isMoving ? '10px' : '8px'};
+      ">
+        <span style="filter: drop-shadow(0 1px 1px rgba(0,0,0,0.5));">${movementIndicator}</span>
       </div>
       ${accuracy ? `<div style="
         position: absolute;
@@ -130,14 +161,47 @@ const createCustomIcon = (color = '#1c6954', accuracy = null) => {
         opacity: 0.3;
         z-index: 1;
       "></div>` : ''}
+      ${isMoving && speed > 0 ? `<div style="
+        position: absolute;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 107, 53, 0.9);
+        color: white;
+        padding: 1px 4px;
+        border-radius: 8px;
+        font-size: 8px;
+        font-weight: bold;
+        white-space: nowrap;
+        z-index: 3;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      ">${speed.toFixed(1)}m/s</div>` : ''}
+      ${movementState && movementState.detailedAddress && movementState.detailedAddress.street ? `<div style="
+        position: absolute;
+        bottom: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 7px;
+        font-weight: bold;
+        white-space: nowrap;
+        z-index: 3;
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      ">${movementState.detailedAddress.street}</div>` : ''}
     </div>`,
     className: 'custom-marker',
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
+    iconSize: [markerSize, markerSize],
+    iconAnchor: [markerSize/2, markerSize/2],
   });
 };
 
-const LocationTrackingMap = ({ drivers = [], currentUserLocation = null, selectedDriver = null }) => {
+const LocationTrackingMap = ({ drivers = [], currentUserLocation = null, selectedDriver = null, driverPaths = {} }) => {
   const { getVisibleDrivers } = useLocationDisplay();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [driverPlaces, setDriverPlaces] = useState({});
@@ -202,8 +266,9 @@ const LocationTrackingMap = ({ drivers = [], currentUserLocation = null, selecte
     return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
   };
   const formatAccuracy = (accuracy) => {
-    if (accuracy === undefined || accuracy === null) return 'Unknown';
-    return `${Math.round(Number(accuracy))}m`;
+    if (accuracy === undefined || accuracy === null) return '20m';
+    const constrainedAccuracy = Math.min(Math.round(Number(accuracy)), 20);
+    return `${constrainedAccuracy}m`;
   };
   const getLocationTime = (timestamp) => {
     if (!timestamp) return 'Unknown';
@@ -238,7 +303,34 @@ const LocationTrackingMap = ({ drivers = [], currentUserLocation = null, selecte
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           
-          {/* Driver markers */}
+          {/* Movement path polylines for continuous tracking */}
+          {Object.entries(driverPaths).map(([driverId, path]) => {
+            if (!path || path.length < 2) return null;
+            
+            const driver = mergedDrivers.find(d => d.id === driverId);
+            if (!driver) return null;
+            
+            const isSelected = selectedDriver && selectedDriver.id === driverId;
+            const movementState = driver.movementState || { isMoving: false };
+            
+            return (
+              <Polyline
+                key={`path-${driverId}`}
+                positions={path}
+                pathOptions={{
+                  color: isSelected ? '#ff6b35' : 
+                         movementState.isMoving ? '#28c76f' : '#6c757d',
+                  weight: isSelected ? 4 : movementState.isMoving ? 3 : 2,
+                  opacity: isSelected ? 0.9 : movementState.isMoving ? 0.8 : 0.6,
+                  dashArray: movementState.isMoving ? null : '5, 10',
+                  lineCap: 'round',
+                  lineJoin: 'round'
+                }}
+              />
+            );
+          })}
+
+          {/* Enhanced driver markers with real-time movement indicators */}
           {mergedDrivers.map(driver => {
             const lat = driver?.location?.latitude;
             const lng = driver?.location?.longitude;
@@ -247,51 +339,65 @@ const LocationTrackingMap = ({ drivers = [], currentUserLocation = null, selecte
             const lngNum = Number(lng);
             if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) return null;
 
-              const isSelected = selectedDriver && selectedDriver.id === driver.id;
+            const isSelected = selectedDriver && selectedDriver.id === driver.id;
+            const movementState = driver.movementState || { isMoving: false, speed: 0, distance: 0 };
+            const isMoving = movementState.isMoving;
               
-              return (
+            return (
               <AnimatedMarker
-                  key={driver.id || driver.userId}
+                key={driver.id || driver.userId}
                 position={[latNum, lngNum]}
-                  icon={createCustomIcon(
+                icon={createCustomIcon(
                   isSelected ? '#ff6b35' : 
                   driver.networkStatus === 'online' ? '#28c76f' : '#b71c1c',
-                  driver.location.accuracy
-                  )}
-                >
-                  <Popup>
-                  <div style={{ textAlign: 'center', fontWeight: '600', minWidth: '250px' }}>
-                      <div style={{ 
-                        color: isSelected ? '#ff6b35' : 
-                               driver.networkStatus === 'online' ? '#28c76f' : '#b71c1c',
+                  driver.location.accuracy,
+                  { ...movementState, detailedAddress: driver.detailedAddress },
+                  driver.detailedAddress
+                )}
+                isMoving={isMoving}
+                duration={isMoving ? 100 : 300}
+              >
+                <Popup>
+                  <div style={{ textAlign: 'center', fontWeight: '600', minWidth: '280px' }}>
+                    <div style={{ 
+                      color: isSelected ? '#ff6b35' : 
+                             driver.networkStatus === 'online' ? '#28c76f' : '#b71c1c',
                       marginBottom: '8px',
                       fontSize: '1.1em'
-                      }}>
-                        {isSelected ? '🎯 ' : '🚗 '}{driver.name || 'Driver'}
-                        {isSelected && ' (Selected)'}
-                      </div>
+                    }}>
+                      {isSelected ? '🎯 ' : (isMoving ? '🚗 ' : '📍 ')}{driver.name || 'Driver'}
+                      {isSelected && ' (Selected)'}
+                    </div>
                     <div style={{ fontSize: '0.9em', color: '#666', marginBottom: '6px' }}>
-                        ID: {driver.userId || driver.id}
-                      </div>
-                      <div style={{ 
-                        fontSize: '0.9em', 
-                        color: driver.networkStatus === 'online' ? '#28c76f' : '#b71c1c',
+                      ID: {driver.userId || driver.id}
+                    </div>
+                    <div style={{ 
+                      fontSize: '0.9em', 
+                      color: driver.networkStatus === 'online' ? '#28c76f' : '#b71c1c',
                       fontWeight: '600',
                       marginBottom: '6px'
-                      }}>
-                        {driver.networkStatus === 'online' ? '🟢 Online' : '🔴 Offline'}
-                      </div>
-                      <div style={{ 
-                      fontSize: '0.85em', 
-                        color: '#28c76f',
-                        fontWeight: '600',
-                      marginBottom: '6px',
-                      backgroundColor: '#f0f9ff',
-                      padding: '4px 8px',
-                      borderRadius: '4px'
                     }}>
-                      📍 Real-time GPS Tracking Active
+                      {driver.networkStatus === 'online' ? '🟢 Online' : '🔴 Offline'}
                     </div>
+                    
+                    {/* Movement Status Display */}
+                    <div style={{ 
+                      fontSize: '0.85em', 
+                      color: isMoving ? '#ff6b35' : '#28c76f',
+                      fontWeight: '600',
+                      marginBottom: '6px',
+                      backgroundColor: isMoving ? '#fff5f0' : '#f0f9ff',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      border: `1px solid ${isMoving ? '#ff6b35' : '#28c76f'}`
+                    }}>
+                      {isMoving ? (
+                        `🚗 Moving at ${movementState.speed.toFixed(1)}m/s`
+                      ) : (
+                        '📍 Real-time GPS Tracking Active'
+                      )}
+                    </div>
+                    
                     <div style={{ 
                       fontSize: '0.8em', 
                       color: '#333',
@@ -321,22 +427,111 @@ const LocationTrackingMap = ({ drivers = [], currentUserLocation = null, selecte
                         ⏰ Updated: {getLocationTime(driver.location.timestamp)}
                       </div>
                     )}
-                      {driverPlaces[driver.id] && (
-                        <div style={{ 
-                          fontSize: '0.8em', 
-                          color: '#666',
+                    
+                    {/* Movement Details */}
+                    {movementState.distance > 0 && (
+                      <div style={{ 
+                        fontSize: '0.8em', 
+                        color: '#666',
+                        marginBottom: '4px',
+                        backgroundColor: '#f8f9fa',
+                        padding: '3px 6px',
+                        borderRadius: '3px'
+                      }}>
+                        📏 Last movement: {movementState.distance.toFixed(2)}m
+                      </div>
+                    )}
+                    
+                    {/* Detailed Address Information */}
+                    {driver.detailedAddress ? (
+                      <div style={{ 
+                        marginTop: '8px',
+                        borderTop: '1px solid #eee',
+                        paddingTop: '8px'
+                      }}>
+                        <div style={{
+                          fontSize: '0.85em',
+                          fontWeight: '600',
+                          color: '#333',
+                          marginBottom: '4px'
+                        }}>
+                          📍 Exact Location:
+                        </div>
+                        
+                        {/* Street Address */}
+                        {(driver.detailedAddress.houseNumber || driver.detailedAddress.street) && (
+                          <div style={{
+                            fontSize: '0.8em',
+                            color: '#444',
+                            marginBottom: '2px',
+                            fontWeight: '500'
+                          }}>
+                            🏠 {driver.detailedAddress.houseNumber} {driver.detailedAddress.street}
+                          </div>
+                        )}
+                        
+                        {/* Neighborhood */}
+                        {driver.detailedAddress.neighborhood && (
+                          <div style={{
+                            fontSize: '0.8em',
+                            color: '#666',
+                            marginBottom: '2px'
+                          }}>
+                            🏘️ {driver.detailedAddress.neighborhood}
+                          </div>
+                        )}
+                        
+                        {/* City and State */}
+                        {driver.detailedAddress.city && (
+                          <div style={{
+                            fontSize: '0.8em',
+                            color: '#666',
+                            marginBottom: '2px'
+                          }}>
+                            🏙️ {driver.detailedAddress.city}{driver.detailedAddress.state && `, ${driver.detailedAddress.state}`}
+                          </div>
+                        )}
+                        
+                        {/* Postal Code */}
+                        {driver.detailedAddress.postcode && (
+                          <div style={{
+                            fontSize: '0.8em',
+                            color: '#666',
+                            marginBottom: '4px'
+                          }}>
+                            📮 {driver.detailedAddress.postcode}
+                          </div>
+                        )}
+                        
+                        {/* Formatted Address */}
+                        <div style={{
+                          fontSize: '0.75em',
+                          color: '#888',
+                          fontStyle: 'italic',
+                          backgroundColor: '#f8f9fa',
+                          padding: '3px 6px',
+                          borderRadius: '3px',
+                          marginTop: '4px'
+                        }}>
+                          📍 {driver.detailedAddress.formattedAddress}
+                        </div>
+                      </div>
+                    ) : driverPlaces[driver.id] && (
+                      <div style={{ 
+                        fontSize: '0.8em', 
+                        color: '#666',
                         marginTop: '6px',
                         fontStyle: 'italic',
                         borderTop: '1px solid #eee',
                         paddingTop: '6px'
-                        }}>
-                          📍 {driverPlaces[driver.id]}
-                        </div>
-                      )}
-                    </div>
-                  </Popup>
+                      }}>
+                        📍 {driverPlaces[driver.id]}
+                      </div>
+                    )}
+                  </div>
+                </Popup>
               </AnimatedMarker>
-              );
+            );
           })}
         </MapContainer>
         
@@ -383,23 +578,41 @@ const LocationTrackingMap = ({ drivers = [], currentUserLocation = null, selecte
         )}
       </div>
 
-      {/* Legend */}
+      {/* Enhanced Legend with Movement Indicators */}
       <div className="map-legend">
         <div style={{ fontWeight: '600', marginBottom: '4px' }}>Legend:</div>
         <div className="legend-item">
           <div className="legend-dot" style={{ background: '#28c76f' }}></div>
-          <span>Online Driver</span>
+          <span>📍 Stationary Driver</span>
+        </div>
+        <div className="legend-item">
+          <div className="legend-dot" style={{ background: '#28c76f', animation: 'pulse 1.5s ease-in-out infinite' }}></div>
+          <span>🚗 Moving Driver</span>
         </div>
         <div className="legend-item">
           <div className="legend-dot" style={{ background: '#ff6b35' }}></div>
-          <span>Selected Online Driver</span>
+          <span>🎯 Selected Driver</span>
         </div>
-        <div style={{ fontSize: '0.8em', color: '#666', marginTop: '8px', fontStyle: 'italic' }}>
-          GPS accuracy circles show location precision
+        <div style={{ fontSize: '0.85em', color: '#333', fontWeight: '500' }}>
+          Real-time movement detection with 0.1m sensitivity
+        </div>
+        <div style={{ fontSize: '0.8em', color: '#666', marginTop: '4px', fontStyle: 'italic' }}>
+          Pulsing markers indicate active movement
         </div>
       </div>
     </div>
   );
 };
 
-export default LocationTrackingMap; 
+export default LocationTrackingMap;
+
+// Add CSS for pulse animation
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes pulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+`;
+document.head.appendChild(style);

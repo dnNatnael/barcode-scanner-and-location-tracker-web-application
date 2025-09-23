@@ -171,7 +171,7 @@ const Signup = ({ onSignup }) => {
                   onChange={handleChange}
                   disabled={cooldownActive}
                 />
-                <span>Firstname</span>
+                <span>Full Name</span>
               </label>
             </div>
             <label>

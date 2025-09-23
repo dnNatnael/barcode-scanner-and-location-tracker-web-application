@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { auth, db } from "../../firebase";
 import { doc, onSnapshot, getDoc } from "firebase/firestore";
 import { useLocationDisplay } from "../../contexts/LocationDisplayContext";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import "../Styles/LocationTrackingMap.css";
@@ -157,6 +157,10 @@ const OneDriver = () => {
   const [adminUserId, setAdminUserId] = useState(localStorage.getItem('userId') || "");
   const [nearestPlace, setNearestPlace] = useState("");
   const [isDriverCentered, setIsDriverCentered] = useState(false);
+  const [driverMovementState, setDriverMovementState] = useState({ isMoving: false, distance: 0, speed: 0 });
+  const [driverPath, setDriverPath] = useState([]);
+  const previousLocationRef = useRef(null);
+  const pathHistoryRef = useRef({ points: [], lastUpdate: 0, totalDistance: 0 });
 
   // Function to get nearest place name
   const getNearestPlace = async (latitude, longitude) => {
@@ -190,10 +194,11 @@ const OneDriver = () => {
     return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
   };
 
-  // Format accuracy for display
+  // Format accuracy for display - ensure 20m maximum
   const formatAccuracy = (accuracy) => {
-    if (!accuracy) return 'Unknown';
-    return `${Math.round(accuracy)}m`;
+    if (!accuracy) return '20m';
+    const constrainedAccuracy = Math.min(Math.round(accuracy), 20);
+    return `${constrainedAccuracy}m`;
   };
 
   // Get location timestamp
@@ -204,6 +209,60 @@ const OneDriver = () => {
       return date.toLocaleTimeString();
     } catch (error) {
       return 'Unknown';
+    }
+  };
+
+  // Haversine formula for calculating distance between two GPS coordinates
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371000; // Earth's radius in meters
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; // Distance in meters
+  };
+
+  // Update driver movement path for continuous tracking
+  const updateDriverPath = (lat, lon, distance) => {
+    const currentTime = Date.now();
+    const newPoint = [lat, lon];
+    
+    // Initialize path if it doesn't exist
+    if (pathHistoryRef.current.points.length === 0) {
+      pathHistoryRef.current = {
+        points: [newPoint],
+        lastUpdate: currentTime,
+        totalDistance: 0
+      };
+      setDriverPath([newPoint]);
+      return;
+    }
+    
+    // Only add point if there's significant movement (>0.1m) or time gap (>5s)
+    const timeSinceLastUpdate = currentTime - pathHistoryRef.current.lastUpdate;
+    if (distance >= 0.1 || timeSinceLastUpdate > 5000) {
+      // Add new point to path
+      const updatedPoints = [...pathHistoryRef.current.points, newPoint];
+      
+      // Keep only last 50 points to prevent memory issues
+      const maxPoints = 50;
+      const trimmedPoints = updatedPoints.length > maxPoints 
+        ? updatedPoints.slice(-maxPoints) 
+        : updatedPoints;
+      
+      // Update path history
+      pathHistoryRef.current = {
+        points: trimmedPoints,
+        lastUpdate: currentTime,
+        totalDistance: pathHistoryRef.current.totalDistance + (distance || 0)
+      };
+      
+      // Update state for map display
+      setDriverPath(trimmedPoints);
+      
+      console.log(`📍 Path updated for ${driverName}: ${trimmedPoints.length} points, ${pathHistoryRef.current.totalDistance.toFixed(1)}m total`);
     }
   };
 
@@ -234,18 +293,39 @@ const OneDriver = () => {
       return;
     }
 
-    // Listen to the specific driver's document
+    // Listen to the specific driver's document with location visibility principles
     const driverDocRef = doc(db, "driver", driverId);
     const unsubscribe = onSnapshot(driverDocRef, (doc) => {
       if (doc.exists()) {
         const driverData = { id: doc.id, ...doc.data() };
-        setDriver(driverData);
         
-        if (driverData.location && driverData.location.latitude && driverData.location.longitude) {
-          console.log("Driver location found, calling getNearestPlace");
+        // Apply location tracking working principles:
+        // 1. Online Location - show location only if services enabled and online
+        // 2. Offline Location - hide location if services disabled or offline
+        // 3. Movement Detection - monitor location updates for online drivers
+        const hasLocationServices = driverData.showLocation === true;
+        const isNetworkOnline = driverData.networkStatus === 'online';
+        const hasValidLocation = driverData.location && 
+                              driverData.location.latitude && 
+                              driverData.location.longitude;
+        
+        const shouldShowLocation = hasLocationServices && isNetworkOnline && hasValidLocation;
+        
+        const processedDriver = {
+          ...driverData,
+          isLocationVisible: shouldShowLocation,
+          locationServicesEnabled: hasLocationServices
+        };
+        
+        setDriver(processedDriver);
+        
+        // Only fetch place name if location should be visible
+        if (shouldShowLocation) {
+          console.log("Driver location visible, calling getNearestPlace");
           getNearestPlace(driverData.location.latitude, driverData.location.longitude);
         } else {
-          console.log("No driver location found");
+          console.log(`Driver location not visible - Services: ${hasLocationServices}, Online: ${isNetworkOnline}, ValidLocation: ${hasValidLocation}`);
+          setNearestPlace(""); // Clear place name when location not visible
         }
       } else {
         setDriver(null);
@@ -259,6 +339,75 @@ const OneDriver = () => {
     return () => unsubscribe();
   }, [driverId]);
 
+  // Real-time movement detection for single driver
+  useEffect(() => {
+    if (!driver || !driver.isLocationVisible || !driver.location) {
+      return;
+    }
+
+    const detectMovement = () => {
+      const currentLat = driver.location.latitude;
+      const currentLon = driver.location.longitude;
+      const currentTime = driver.location.timestamp;
+      
+      let distance = 0;
+      let speed = 0;
+      
+      if (previousLocationRef.current) {
+        distance = calculateDistance(
+          previousLocationRef.current.lat,
+          previousLocationRef.current.lon,
+          currentLat,
+          currentLon
+        );
+        
+        const timeDiff = currentTime ? new Date(currentTime).getTime() - previousLocationRef.current.timestamp : 0;
+        speed = timeDiff > 0 ? (distance / (timeDiff / 1000)) : 0; // m/s
+        
+        // Detect movement with 0.1m sensitivity
+        if (distance >= 0.1) {
+          console.log(`🚗 Movement detected: ${driverName} moved ${distance.toFixed(2)}m at ${speed.toFixed(2)}m/s`);
+          
+          setDriverMovementState({
+            isMoving: true,
+            distance: distance,
+            speed: speed,
+            lastMovement: Date.now(),
+            accuracy: driver.location.accuracy || 'Unknown'
+          });
+        } else {
+          // Check if driver was previously moving but now stationary
+          if (driverMovementState.isMoving && distance < 0.1) {
+            console.log(`⏸️ Driver ${driverName} stopped moving (${distance.toFixed(2)}m displacement)`);
+            setDriverMovementState(prev => ({
+              ...prev,
+              isMoving: false,
+              distance: distance,
+              speed: 0
+            }));
+          }
+        }
+      }
+      
+      // Update previous location for next comparison
+      previousLocationRef.current = {
+        lat: currentLat,
+        lon: currentLon,
+        timestamp: currentTime ? new Date(currentTime).getTime() : Date.now()
+      };
+      
+      // Update movement path for continuous tracking
+      updateDriverPath(currentLat, currentLon, distance);
+    };
+
+    // Check every 500ms for ultra-responsive real-time movement detection
+    const intervalId = setInterval(detectMovement, 500);
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [driver, driverMovementState, driverName]);
+
   if (loading) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center' }}>
@@ -267,32 +416,9 @@ const OneDriver = () => {
     );
   }
 
-  if (!driver) {
-    return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <h2>Driver not found</h2>
-        <button
-          style={{
-            padding: '0.7em 2em',
-            background: '#1c6954',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 8,
-            fontSize: '1.1em',
-            fontWeight: 600,
-            cursor: 'pointer',
-            marginTop: '1rem'
-          }}
-          onClick={() => navigate('/admin-dashboard', { state: { name: adminName || localStorage.getItem('userName') || "User" } })}
-        >
-          Back to Dashboard
-        </button>
-      </div>
-    );
-  }
-
-  const isLocationVisible = driverLocationStates[driver.id]?.showLocation;
-  const hasLocation = driver.location && driver.location.latitude && driver.location.longitude;
+  // Use the computed visibility from driver data (follows working principles)
+  const isLocationVisible = driver?.isLocationVisible || false;
+  const hasLocation = driver?.location && driver.location.latitude && driver.location.longitude;
 
   return (
     <div className="one-driver-container" style={{ width: '100vw', height: '100vh', padding: 0, margin: 0, overflow: 'auto' }}>
@@ -339,30 +465,42 @@ const OneDriver = () => {
               fontSize: '0.85em',
               borderRadius: '8px',
               border: 'none',
-              background: 'linear-gradient(90deg, #28c76f 0%, #20c997 100%)',
+              background: isLocationVisible 
+                ? 'linear-gradient(90deg, #28c76f 0%, #20c997 100%)' 
+                : 'linear-gradient(90deg, #6c757d 0%, #5a6268 100%)',
               color: '#fff',
               fontWeight: 700,
-              cursor: 'pointer',
+              cursor: isLocationVisible ? 'pointer' : 'not-allowed',
               boxShadow: '0 2px 8px rgba(44, 62, 80, 0.10)',
               display: 'flex',
               alignItems: 'center',
               gap: 6,
               transition: 'all 0.2s',
+              opacity: isLocationVisible ? 1 : 0.6
             }}
             onMouseOver={e => {
-              e.currentTarget.style.background = 'linear-gradient(90deg, #20c997 0%, #28c76f 100%)';
-              e.currentTarget.style.transform = 'scale(1.06)';
-            }}
-            onMouseOut={e => {
-              e.currentTarget.style.background = 'linear-gradient(90deg, #28c76f 0%, #20c997 100%)';
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-            onClick={() => {
-              if (mapControllerRef.current && mapControllerRef.current.centerOnDriver) {
-                mapControllerRef.current.centerOnDriver();
-                setIsDriverCentered(true);
+              if (isLocationVisible) {
+                e.currentTarget.style.background = 'linear-gradient(90deg, #20c997 0%, #28c76f 100%)';
+                e.currentTarget.style.transform = 'scale(1.06)';
               }
             }}
+            onMouseOut={e => {
+              if (isLocationVisible) {
+                e.currentTarget.style.background = 'linear-gradient(90deg, #28c76f 0%, #20c997 100%)';
+                e.currentTarget.style.transform = 'scale(1)';
+              }
+            }}
+            onClick={() => {
+              if (isLocationVisible && mapControllerRef.current && mapControllerRef.current.centerOnDriver) {
+                mapControllerRef.current.centerOnDriver();
+                setIsDriverCentered(true);
+              } else if (!isLocationVisible) {
+                alert(driver?.locationServicesEnabled 
+                  ? 'Cannot center on driver: Driver is offline' 
+                  : 'Cannot center on driver: Location services are disabled');
+              }
+            }}
+            disabled={!isLocationVisible}
           >
             <span style={{ fontSize: '1em', marginRight: 3 }}>📍</span> <span style={{ fontSize: '0.95em' }}>Center Driver</span>
           </button>
@@ -431,11 +569,30 @@ const OneDriver = () => {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
             
-            {/* Driver marker - Only show if location is visible and available */}
+            {/* Movement path polyline for continuous tracking */}
+            {isLocationVisible && driverPath.length > 1 && (
+              <Polyline
+                positions={driverPath}
+                pathOptions={{
+                  color: driverMovementState.isMoving ? '#28c76f' : '#6c757d',
+                  weight: driverMovementState.isMoving ? 3 : 2,
+                  opacity: driverMovementState.isMoving ? 0.8 : 0.6,
+                  dashArray: driverMovementState.isMoving ? null : '5, 10',
+                  lineCap: 'round',
+                  lineJoin: 'round'
+                }}
+              />
+            )}
+
+            {/* Driver marker - Only show if location is visible (follows working principles) */}
             {isLocationVisible && hasLocation && (
               <AnimatedMarker
                 position={[driver.location.latitude, driver.location.longitude]}
-                icon={createCustomIcon('#28c76f', driver.location.accuracy)}
+                icon={createCustomIcon(
+                  driverMovementState.isMoving ? '#ff6b35' : '#28c76f', 
+                  driver.location.accuracy
+                )}
+                duration={driverMovementState.isMoving ? 100 : 300}
               >
                 <Popup>
                   <div style={{ textAlign: 'center', minWidth: '250px' }}>
@@ -447,15 +604,48 @@ const OneDriver = () => {
                     </div>
                     <div style={{ 
                       fontSize: '0.85em', 
-                      color: '#28c76f',
+                      color: driverMovementState.isMoving ? '#ff6b35' : '#28c76f',
                       fontWeight: '600',
                       marginBottom: '0.5rem',
-                      backgroundColor: '#f0f9ff',
+                      backgroundColor: driverMovementState.isMoving ? '#fff5f0' : '#f0f9ff',
                       padding: '4px 8px',
-                      borderRadius: '4px'
+                      borderRadius: '4px',
+                      border: `1px solid ${driverMovementState.isMoving ? '#ff6b35' : '#28c76f'}`
                     }}>
-                      📍 Real-time GPS Tracking Active
+                      {driverMovementState.isMoving ? (
+                        `🚗 Moving at ${driverMovementState.speed.toFixed(1)}m/s`
+                      ) : (
+                        '📍 Real-time GPS Tracking Active'
+                      )}
                     </div>
+                    
+                    {/* Movement Details */}
+                    {driverMovementState.distance > 0 && (
+                      <div style={{ 
+                        fontSize: '0.8em', 
+                        color: '#666',
+                        marginBottom: '0.4rem',
+                        backgroundColor: '#f8f9fa',
+                        padding: '3px 6px',
+                        borderRadius: '3px'
+                      }}>
+                        📏 Last movement: {driverMovementState.distance.toFixed(2)}m
+                      </div>
+                    )}
+                    
+                    {/* Path Information */}
+                    {driverPath.length > 1 && (
+                      <div style={{ 
+                        fontSize: '0.8em', 
+                        color: '#666',
+                        marginBottom: '0.4rem',
+                        backgroundColor: '#f8f9fa',
+                        padding: '3px 6px',
+                        borderRadius: '3px'
+                      }}>
+                        🛤️ Path points: {driverPath.length} | Total: {pathHistoryRef.current.totalDistance.toFixed(1)}m
+                      </div>
+                    )}
                     <div style={{ 
                       fontSize: '0.8em', 
                       color: '#333',
@@ -467,15 +657,13 @@ const OneDriver = () => {
                     }}>
                       📍 {formatCoordinates(driver.location.latitude, driver.location.longitude)}
                     </div>
-                    {driver.location.accuracy && (
-                      <div style={{ fontSize: '0.8em', color: '#666', marginBottom: '0.4rem' }}>
-                        🎯 Accuracy: {formatAccuracy(driver.location.accuracy)}
-                      </div>
-                    )}
+                    <div style={{ fontSize: '0.8em', color: '#666', marginBottom: '0.4rem' }}>
+                      🎯 Accuracy: {formatAccuracy(driver.location.accuracy)}
+                    </div>
                     {driver.location.timestamp && (
                       <div style={{ fontSize: '0.8em', color: '#666', marginBottom: '0.4rem' }}>
                         ⏰ Updated: {getLocationTime(driver.location.timestamp)}
-                    </div>
+                      </div>
                     )}
                     {nearestPlace && (
                       <div style={{ 
@@ -493,6 +681,43 @@ const OneDriver = () => {
                 </Popup>
               </AnimatedMarker>
             )}
+            
+            {/* Location Status Overlay - Show when location is not visible */}
+            {!isLocationVisible && (
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                background: driver?.locationServicesEnabled 
+                  ? 'rgba(255, 193, 7, 0.95)' 
+                  : 'rgba(220, 53, 69, 0.95)',
+                color: '#fff',
+                padding: '20px 30px',
+                borderRadius: '12px',
+                fontSize: '1.1em',
+                fontWeight: '600',
+                zIndex: 1000,
+                boxShadow: '0 8px 25px rgba(0,0,0,0.3)',
+                textAlign: 'center',
+                backdropFilter: 'blur(8px)',
+                border: '2px solid rgba(255,255,255,0.2)'
+              }}>
+                <div style={{ fontSize: '2em', marginBottom: '10px' }}>
+                  {driver?.locationServicesEnabled ? '⚠️' : '🚫'}
+                </div>
+                <div style={{ marginBottom: '8px' }}>
+                  {driver?.locationServicesEnabled 
+                    ? 'Location Services Enabled' 
+                    : 'Location Services Disabled'}
+                </div>
+                <div style={{ fontSize: '0.9em', opacity: 0.9 }}>
+                  {driver?.locationServicesEnabled 
+                    ? 'Driver is offline - No location available' 
+                    : 'Driver location tracking is turned off'}
+                </div>
+              </div>
+            )}
           </MapContainer>
           
           {/* Driver Details Overlay - Top Right Corner */}
@@ -506,24 +731,45 @@ const OneDriver = () => {
             borderRadius: '8px',
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
             zIndex: 1000,
-            minWidth: '200px',
+            minWidth: '220px',
             fontSize: '0.9em',
             fontWeight: 500,
             textAlign: 'left',
           }}>
             <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
-              <span style={{ color: '#fff', minWidth: '70px' }}>Driver Name:</span>
+              <span style={{ color: '#fff', minWidth: '80px' }}>Driver Name:</span>
               <span style={{ color: '#fff', marginLeft: 4 }}>{driverName}</span>
             </div>
             <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
-              <span style={{ color: '#fff', minWidth: '60px' }}>Driver ID:</span>
+              <span style={{ color: '#fff', minWidth: '70px' }}>Driver ID:</span>
               <span style={{ color: '#fff', marginLeft: 4 }}>{driverUserId}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{ color: '#fff', minWidth: '70px' }}>Network Status:</span>
-              <span style={{ color: driver.networkStatus === 'online' ? '#28c76f' : '#fca5a5', marginLeft: 4 }}>
-                {driver.networkStatus ? driver.networkStatus : 'Unknown'}
+            <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
+              <span style={{ color: '#fff', minWidth: '80px' }}>Network Status:</span>
+              <span style={{ color: driver?.networkStatus === 'online' ? '#28c76f' : '#fca5a5', marginLeft: 4 }}>
+                {driver?.networkStatus ? driver.networkStatus : 'Unknown'}
               </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span style={{ color: '#fff', minWidth: '80px' }}>GPS Services:</span>
+              <span style={{ 
+                color: driver?.locationServicesEnabled ? '#28c76f' : '#fca5a5', 
+                marginLeft: 4,
+                fontSize: '0.85em'
+              }}>
+                {driver?.locationServicesEnabled ? '📍 Enabled' : '🚫 Disabled'}
+              </span>
+            </div>
+            <div style={{ 
+              marginTop: '0.5rem', 
+              padding: '0.5rem', 
+              borderRadius: '4px',
+              background: isLocationVisible ? 'rgba(40, 199, 111, 0.2)' : 'rgba(220, 53, 69, 0.2)',
+              border: `1px solid ${isLocationVisible ? '#28c76f' : '#dc3545'}`,
+              fontSize: '0.8em',
+              textAlign: 'center'
+            }}>
+              {isLocationVisible ? '📍 Location Visible' : '🚫 Location Hidden'}
             </div>
           </div>
         </div>

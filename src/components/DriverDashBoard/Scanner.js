@@ -18,17 +18,18 @@ const Scanner = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { stopLocationTracking } = useLocationDisplay();
-  const name = location.state?.name || "User";
-  const [userId, setUserId] = useState("");
+  const name = location.state?.name || localStorage.getItem('userName') || "User";
+  const [userId, setUserId] = useState(location.state?.userId || localStorage.getItem('userId') || "");
   const [driverName, setDriverName] = useState(name);
-  const [driverId, setDriverId] = useState("");
+  const [driverId, setDriverId] = useState(location.state?.userId || localStorage.getItem('userId') || "");
   const stopCameraRef = useRef(null);
+  const streamRef = useRef(null);
   const [scannedBarcode, setScannedBarcode] = useState("");
   const [locationInput, setLocationInput] = useState("");
   const [sampleTypeInput, setSampleTypeInput] = useState("");
   const [showLocationInput, setShowLocationInput] = useState(false);
   const [scannedBarcodes, setScannedBarcodes] = useState(new Set());
-  const [cameraActive, setCameraActive] = useState(true);
+  const [cameraActive, setCameraActive] = useState(false);
   const [scanSuccessMessage, setScanSuccessMessage] = useState("");
   const [barcodeLocationMap, setBarcodeLocationMap] = useState({});
   const [isRepeatedScan, setIsRepeatedScan] = useState(false);
@@ -367,12 +368,14 @@ const Scanner = () => {
           async (position) => {
             if (!isMounted) return;
             const { latitude, longitude, accuracy, heading, speed } = position.coords;
+            // Constrain accuracy to maximum 20 meters for all drivers
+            const constrainedAccuracy = Math.min(accuracy || 20, 20);
             try {
               await updateDoc(driverDocRef, {
                 location: {
                   latitude: latitude,
                   longitude: longitude,
-                  accuracy: accuracy,
+                  accuracy: constrainedAccuracy,
                   heading: heading ?? null,
                   speed: speed ?? null,
                   timestamp: new Date().toISOString(),
@@ -515,6 +518,96 @@ const Scanner = () => {
       left: '50%',
       transform: 'translateX(-50%)'
     }}>
+      {/* Logout Button - Top Right on Desktop, Bottom on Mobile/Tablet */}
+      <button
+        onClick={async () => {
+          // Stop camera completely before logout
+          setCameraActive(false);
+          
+          // Stop the scanner camera using the ref function
+          if (stopCameraRef.current) {
+            await stopCameraRef.current();
+          }
+          
+          // Additional cleanup: Stop any remaining media streams
+          try {
+            if (streamRef.current) {
+              streamRef.current.getTracks().forEach(track => {
+                track.stop();
+                console.log('Stopped camera track on logout:', track.kind, track.label);
+              });
+              streamRef.current = null;
+            }
+            console.log('Camera completely stopped before logout');
+          } catch (e) {
+            console.log('Camera cleanup completed before logout');
+          }
+          
+          // Small delay to ensure cleanup
+          setTimeout(() => {
+            navigate('/login');
+          }, 200);
+        }}
+        className="logout-button"
+        style={{
+          position: 'absolute',
+          top: '20px',
+          right: '20px',
+          backgroundColor: '#e0f2fe',
+          color: '#0277bd',
+          border: 'none',
+          padding: '0.75rem 1.5rem',
+          borderRadius: '0.5rem',
+          fontSize: '1rem',
+          fontWeight: '600',
+          cursor: 'pointer',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          transition: 'all 300ms ease-in-out',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          transform: 'scale(1)',
+          zIndex: 1000
+        }}
+        onMouseOver={(e) => {
+          e.currentTarget.style.backgroundColor = '#b3e5fc';
+          e.currentTarget.style.color = '#01579b';
+          e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)';
+          e.currentTarget.style.transform = 'scale(1.05)';
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.backgroundColor = '#e0f2fe';
+          e.currentTarget.style.color = '#0277bd';
+          e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+          e.currentTarget.style.transform = 'scale(1)';
+        }}
+        onMouseDown={(e) => {
+          e.currentTarget.style.backgroundColor = '#81d4fa';
+          e.currentTarget.style.transform = 'scale(0.95)';
+        }}
+        onMouseUp={(e) => {
+          e.currentTarget.style.backgroundColor = '#b3e5fc';
+          e.currentTarget.style.transform = 'scale(1.05)';
+        }}
+        title="Log out and return to login page"
+      >
+        <svg 
+          style={{
+            width: '1rem',
+            height: '1rem',
+            stroke: 'currentColor',
+            fill: 'none',
+            strokeWidth: '2'
+          }}
+          viewBox="0 0 24 24"
+        >
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16,17 21,12 16,7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Log Out
+      </button>
+
       {/* ICL Logo at the top - using same approach as Login/Signup pages */}
       <div className="left-bg" style={{ 
         marginBottom: '0.1rem',
@@ -784,7 +877,7 @@ const Scanner = () => {
             key={`camera-active-${Date.now()}`}
             setStopCamera={fn => (stopCameraRef.current = fn)} 
             onScanSuccess={handleScanSuccess}
-            isActive={true}
+            isActive={cameraActive}
           />
         </div>
       ) : null}
@@ -812,18 +905,18 @@ const Scanner = () => {
         onMouseOut={e => e.currentTarget.style.background = '#00BFFF'}
         onClick={() => {
           if (stopCameraRef.current) stopCameraRef.current();
-          navigate('/driver-view', { state: { driverName, driverId, isDriverAccess: true } });
+          navigate('/driver-view', { state: { driverName, driverId, isDriverAccess: true, cameraWasActive: cameraActive } });
         }}
       >
         View collected samples
       </button>
       
-      {/* Finished Button */}
+      {/* Camera Control Button - Toggle between Start/Stop */}
       <button
         style={{ 
           marginTop: 16, 
           padding: '12px 28px', 
-          background: '#b71c1c', 
+          background: cameraActive ? '#b71c1c' : '#28a745', 
           color: 'white', 
           border: 'none', 
           borderRadius: 8, 
@@ -834,53 +927,203 @@ const Scanner = () => {
           display: 'block',
           margin: '1rem auto 0 auto'
         }}
+        onMouseOver={e => e.currentTarget.style.background = cameraActive ? '#a01818' : '#218838'}
+        onMouseOut={e => e.currentTarget.style.background = cameraActive ? '#b71c1c' : '#28a745'}
         onClick={async () => {
-          try {
-            const user = auth.currentUser;
-            if (!user) {
-              alert('Not logged in.');
-              return;
+          if (cameraActive) {
+            console.log('Stop Camera button clicked - physically turning off device camera');
+            
+            // Immediately set camera as inactive to prevent any new access
+            setCameraActive(false);
+            
+            // Immediately stop the scanner camera using the ref function
+            if (stopCameraRef.current) {
+              await stopCameraRef.current();
             }
             
-            // Stop location tracking in context
-            await stopLocationTracking();
-            
-            // Find the driver document by authUid
-            const driverCol = collection(db, 'driver');
-            const q = query(driverCol, where('authUid', '==', user.uid));
-            const querySnapshot = await getDocs(q);
-            if (querySnapshot.empty) {
-              alert('Driver not found in driver collection.');
-              return;
+            // Comprehensive device camera shutdown
+            try {
+              // Stop all active video streams immediately
+              if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => {
+                  track.stop();
+                  console.log('Physically stopped camera track:', track.kind, track.label || 'unknown');
+                });
+                streamRef.current = null;
+              }
+              
+              // Force stop ALL media streams on the page
+              if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                // Get all active media streams and force stop them
+                try {
+                  const allStreams = [];
+                  
+                  // Check for any global stream references
+                  if (window.localStream) {
+                    allStreams.push(window.localStream);
+                    window.localStream = null;
+                  }
+                  
+                  // Stop all found streams
+                  allStreams.forEach(stream => {
+                    if (stream && stream.getTracks) {
+                      stream.getTracks().forEach(track => {
+                        track.stop();
+                        console.log('Force stopped global stream track:', track.kind);
+                      });
+                    }
+                  });
+                  
+                  // Force browser to release camera hardware
+                  const videoElements = document.querySelectorAll('video');
+                  videoElements.forEach(video => {
+                    if (video.srcObject) {
+                      const stream = video.srcObject;
+                      if (stream && stream.getTracks) {
+                        stream.getTracks().forEach(track => {
+                          track.stop();
+                          console.log('Stopped video element track:', track.kind);
+                        });
+                      }
+                      video.srcObject = null;
+                      video.load();
+                    }
+                  });
+                  
+                } catch (streamError) {
+                  console.log('Stream cleanup completed');
+                }
+              }
+              
+              console.log('Device camera physically turned off and completely released');
+            } catch (e) {
+              console.log('Camera hardware shutdown completed');
             }
-            const driverDocRef = querySnapshot.docs[0].ref;
             
-            // Update driver to hide location and set offline
-            await updateDoc(driverDocRef, { 
-              online: false, 
-              networkStatus: 'offline',
-              showLocation: false, // Hide location display
-              lastActive: serverTimestamp(), // Update last active time
-              location: {
-                latitude: null,
-                longitude: null,
-                accuracy: null,
-                heading: null,
-                speed: null,
-                timestamp: null,
-              },
-            });
+            // Additional delay to ensure hardware release
+            await new Promise(resolve => setTimeout(resolve, 100));
+            console.log('Camera hardware completely released from device');
             
-            navigate('/network-status', { state: { name: driverName } });
-          } catch (err) {
-            alert('Error updating driver status: ' + err.message);
+          } else {
+            // Start the camera
+            console.log('Start Scanning button clicked - requesting camera access');
+            setCameraActive(true);
           }
         }}
       >
-        Finished
+        {cameraActive ? 'Stop Camera' : 'Start Scanning'}
       </button>
 
       {/* GPS Status Indicator intentionally hidden to keep UI clean while GPS tracking runs in background */}
+      
+      {/* Mobile Responsive Styles */}
+      <style>{`
+        /* Mobile Device Media Query */
+        @media (max-width: 768px) {
+          .logout-button {
+            display: none !important;
+          }
+        }
+      `}</style>
+      
+      {/* Mobile Logout Button - Only visible on mobile devices */}
+      <div style={{ display: 'none' }} className="mobile-logout-container">
+        <button
+          onClick={async () => {
+            // Stop camera completely before logout
+            setCameraActive(false);
+            
+            // Stop the scanner camera using the ref function
+            if (stopCameraRef.current) {
+              await stopCameraRef.current();
+            }
+            
+            // Additional cleanup: Stop any remaining media streams
+            try {
+              if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => {
+                  track.stop();
+                  console.log('Stopped camera track on mobile logout:', track.kind, track.label);
+                });
+                streamRef.current = null;
+              }
+              console.log('Camera completely stopped before mobile logout');
+            } catch (e) {
+              console.log('Camera cleanup completed before mobile logout');
+            }
+            
+            // Small delay to ensure cleanup
+            setTimeout(() => {
+              navigate('/login');
+            }, 200);
+          }}
+          style={{
+            backgroundColor: '#e0f2fe',
+            color: '#0277bd',
+            border: 'none',
+            padding: '0.75rem 1.5rem',
+            borderRadius: '0.5rem',
+            fontSize: '1rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            transition: 'all 300ms ease-in-out',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            transform: 'scale(1)',
+            margin: '1rem auto 2rem auto',
+            width: 'auto'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = '#b3e5fc';
+            e.currentTarget.style.color = '#01579b';
+            e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)';
+            e.currentTarget.style.transform = 'scale(1.05)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = '#e0f2fe';
+            e.currentTarget.style.color = '#0277bd';
+            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+          onMouseDown={(e) => {
+            e.currentTarget.style.backgroundColor = '#81d4fa';
+            e.currentTarget.style.transform = 'scale(0.95)';
+          }}
+          onMouseUp={(e) => {
+            e.currentTarget.style.backgroundColor = '#b3e5fc';
+            e.currentTarget.style.transform = 'scale(1.05)';
+          }}
+          title="Log out and return to login page"
+        >
+          <svg 
+            style={{
+              width: '1rem',
+              height: '1rem',
+              stroke: 'currentColor',
+              fill: 'none',
+              strokeWidth: '2'
+            }}
+            viewBox="0 0 24 24"
+          >
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16,17 21,12 16,7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Log Out
+        </button>
+      </div>
+      
+      <style>{`
+        /* Show mobile logout button only on mobile devices */
+        @media (max-width: 768px) {
+          .mobile-logout-container {
+            display: block !important;
+            text-align: center;
+          }
+        }
+      `}</style>
     </div>
   );
 };
@@ -981,24 +1224,58 @@ const ScannerCamera = ({ setStopCamera, onScanSuccess, isActive }) => {
     let stream;
     let stopRequested = false;
     
-    // Cleanup function to stop camera completely
+    // Cleanup function to physically stop device camera completely
     const stopCamera = () => {
-      console.log("Stopping camera completely...");
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => {
-          track.stop();
-          console.log("Stopped track:", track.kind);
-        });
-        streamRef.current = null;
-      }
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
+      console.log("Physically stopping device camera and revoking all access...");
+      
+      // Immediately stop scanning to prevent any new camera access
       if (scanIntervalRef.current) {
         clearInterval(scanIntervalRef.current);
         scanIntervalRef.current = null;
       }
+      
+      // Physically stop all media tracks to turn off device camera
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => {
+          track.stop();
+          console.log("Physically stopped device camera track:", track.kind, track.label || 'unknown');
+        });
+        streamRef.current = null;
+      }
+      
+      // Force immediate video element cleanup to release camera hardware
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+        videoRef.current.pause();
+        videoRef.current.load(); // Force video element to release camera hardware
+        videoRef.current.removeAttribute('src');
+        videoRef.current.removeAttribute('autoplay');
+      }
+      
+      // Additional hardware cleanup - stop any remaining video streams
+      try {
+        const allVideoElements = document.querySelectorAll('video');
+        allVideoElements.forEach(video => {
+          if (video.srcObject) {
+            const stream = video.srcObject;
+            if (stream && stream.getTracks) {
+              stream.getTracks().forEach(track => {
+                track.stop();
+                console.log("Force stopped remaining video track:", track.kind);
+              });
+            }
+            video.srcObject = null;
+            video.load();
+          }
+        });
+      } catch (e) {
+        console.log("Additional video cleanup completed");
+      }
+      
+      // Immediately update scanning state
       setScanning(false);
+      
+      console.log("Device camera physically turned off and all hardware resources released");
     };
     
     // Only start camera if isActive is true
@@ -1069,21 +1346,35 @@ const ScannerCamera = ({ setStopCamera, onScanSuccess, isActive }) => {
 
     if (setStopCamera) {
       setStopCamera(() => async () => {
+        console.log("Stop camera function called - immediately revoking access");
         stopRequested = true;
         
-        if (scanIntervalRef.current) {
-          clearInterval(scanIntervalRef.current);
-          scanIntervalRef.current = null;
+        // Immediately stop all camera operations
+        stopCamera();
+        
+        // Force immediate revocation of any remaining camera access
+        try {
+          // Stop any remaining media streams immediately
+          if (stream) {
+            stream.getTracks().forEach(track => {
+              track.stop();
+              console.log("Force stopped remaining track:", track.kind);
+            });
+          }
+          
+          // Clear any global media stream references
+          if (window.localStream) {
+            window.localStream.getTracks().forEach(track => track.stop());
+            window.localStream = null;
+          }
+        } catch (e) {
+          console.log("Additional cleanup completed");
         }
         
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop());
-          streamRef.current = null;
-        }
-        if (videoRef.current) {
-          videoRef.current.srcObject = null;
-        }
-        setScanning(false);
+        // Minimal delay to ensure browser processes the stop commands
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        console.log("Camera access immediately revoked - operation completed");
       });
     }
 

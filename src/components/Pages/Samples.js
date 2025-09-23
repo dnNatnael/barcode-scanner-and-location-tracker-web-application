@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { db } from "../../firebase";
 import { collection, onSnapshot, query, orderBy, getDocs, updateDoc, doc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import "../Styles/Samples.css";
+import "../Styles/ExcelTable.css";
 
 const Samples = () => {
   const [samples, setSamples] = useState([]);
@@ -11,6 +11,7 @@ const Samples = () => {
   const [error, setError] = useState(null);
   const [expandedBarcodes, setExpandedBarcodes] = useState(new Set());
   const [activeBarcode, setActiveBarcode] = useState(null);
+  const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
 
   const navigate = useNavigate();
 
@@ -156,6 +157,14 @@ const Samples = () => {
     };
   }, []);
 
+  // Show notification
+  const showNotification = (message, type = 'success') => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => {
+      setNotification({ show: false, message: '', type: 'success' });
+    }, 3000);
+  };
+
   // Approve arrival for all samples in a barcode group
   const handleApprove = async (group) => {
     try {
@@ -169,10 +178,24 @@ const Samples = () => {
       });
       
       await Promise.all(updatePromises);
-      alert(`All ${group.samples.length} samples for barcode ${group.barcode} have been approved!`);
+      showNotification(`All ${group.samples.length} samples for barcode ${group.barcode} have been approved!`);
     } catch (error) {
       console.error("Error approving samples:", error);
-      alert("Error approving samples. Please try again.");
+      showNotification("Error approving samples. Please try again.", 'error');
+    }
+  };
+
+  // Approve individual sample
+  const handleApproveSample = async (sample, barcode) => {
+    try {
+      if (sample._docId) {
+        const sampleRef = doc(db, "samples", sample._docId);
+        await updateDoc(sampleRef, { arrivedDate: new Date() });
+        showNotification(`Sample ${sample.SID} for barcode ${barcode} has been approved!`);
+      }
+    } catch (error) {
+      console.error("Error approving sample:", error);
+      showNotification("Error approving sample. Please try again.", 'error');
     }
   };
 
@@ -210,51 +233,46 @@ const Samples = () => {
 
   return (
     <div style={{ width: '100%', maxWidth: '100%', margin: '40px auto 0 auto', padding: '0' }}>
-
+      {/* Notification Toast */}
+      {notification.show && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          background: notification.type === 'success' ? '#28a745' : '#dc3545',
+          color: 'white',
+          padding: '12px 20px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          zIndex: 9999,
+          fontSize: '14px',
+          fontWeight: '500',
+          maxWidth: '400px',
+          animation: 'slideInRight 0.3s ease-out'
+        }}>
+          {notification.message}
+        </div>
+      )}
       <button
         onClick={() => navigate(-1)}
-        style={{
-          position: 'absolute',
-          top: 20,
-          left: 20,
-          padding: '0.18em 0.7em',
-          fontSize: '0.85em',
-          borderRadius: '8px',
-          border: 'none',
-          background: 'linear-gradient(90deg, #1c6954 0%, #23a393 100%)',
-          color: '#fff',
-          fontWeight: 700,
-          cursor: 'pointer',
-          boxShadow: '0 2px 8px rgba(44, 62, 80, 0.10)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          transition: 'all 0.2s',
-        }}
-        onMouseOver={e => {
-          e.currentTarget.style.background = 'linear-gradient(90deg, #155c47 0%, #1c6954 100%)';
-          e.currentTarget.style.transform = 'scale(1.06)';
-        }}
-        onMouseOut={e => {
-          e.currentTarget.style.background = 'linear-gradient(90deg, #1c6954 0%, #23a393 100%)';
-          e.currentTarget.style.transform = 'scale(1)';
-        }}
+        className="back-button"
       >
-        <span style={{ fontSize: '1em', marginRight: 3 }}>&larr;</span> <span style={{ fontSize: '0.95em' }}>Back</span>
+        <span>&larr;</span> <span>Back</span>
       </button>
-      <h2 style={{ margin: '1.5em 0 0.5em 0', textAlign: 'left', marginTop: '2em' }}>All Samples</h2>
-      <div style={{ overflowX: 'auto', width: '100%', marginTop: '-10px' }}>
-        <table className="it-users-table" style={{ width: '100%', minWidth: '1200px' }}>
+      <div className="table-container" style={{ margin: '0', padding: '0' }}>
+        <h2 className="page-title">All Samples</h2>
+        <div className="table-wrapper" style={{ margin: '0', padding: '0' }}>
+          <table className="excel-table" style={{ width: '100%' }}>
         <thead>
           <tr>
-            <th style={{ fontSize: '1.5em', color: '#102542' }}>SID</th>
-            <th style={{ fontSize: '1.5em', color: '#102542', textAlign: 'left', width: '140px' }}>Sample Type</th>
-            <th style={{ width: '220px', fontSize: '1.5em', color: '#102542', textAlign: 'left' }}>Location</th>
-            <th style={{ fontSize: '1.5em', color: '#102542', textAlign: 'left', width: '100px' }}>Driver ID</th>
-            <th style={{ width: '180px', fontSize: '1.5em', color: '#102542', textAlign: 'left' }}>Driver Name</th>
-            <th style={{ fontSize: '1.5em', color: '#102542', textAlign: 'left' }}>Scanned Date</th>
-            <th style={{ width: '170px', fontSize: '1.5em', color: '#102542', textAlign: 'left' }}>Arrived Date</th>
-            <th style={{ fontSize: '1.5em', color: '#102542', textAlign: 'center' }}>Action</th>
+            <th>SID</th>
+            <th>Sample Type</th>
+            <th>Location</th>
+            <th>Driver ID</th>
+            <th>Driver Name</th>
+            <th>Scanned Date</th>
+            <th>Arrived Date</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -263,19 +281,12 @@ const Samples = () => {
           ) : (
             samples.map((group, idx) => (
               <React.Fragment key={group.barcode || idx}>
-                <tr className={group.allApproved ? "approved" : "pending"} style={activeBarcode === group.barcode ? { backgroundColor: '#c3e6cb', borderLeft: '8px solid #28a745', boxShadow: '0 4px 12px rgba(40, 167, 69, 0.25)', transform: 'scale(1.01)' } : {}}>
-                <td style={activeBarcode === group.barcode ? { color: '#0066cc', fontWeight: 'bold', fontSize: '12.5px' } : { fontSize: '12.5px' }}>{group.barcode ? `SID-${group.barcode}` : '-'}</td>
-                <td style={{ textAlign: 'left', fontSize: '12.5px' }}>
+                <tr>
+                <td>{group.barcode ? `SID-${group.barcode}` : '-'}</td>
+                <td>
                     {group.samples.length === 1 ? (
                       // Display sample type directly for single samples
-                      <span style={{ 
-                        fontSize: '12.5px',
-                        fontWeight: '500',
-                        color: '#495057',
-                        textAlign: 'left',
-                        display: 'block',
-                        paddingLeft: '20px'
-                      }}>
+                      <span>
                         {group.samples[0].sampleType || '-'}
                       </span>
                     ) : (
@@ -293,10 +304,9 @@ const Samples = () => {
                       }
                     }}
                     className="btn"
-                    style={{ position: 'relative' }}
                     title={group.samples.map(sample => sample.sampleType || 'Unknown').filter((type, index, arr) => arr.indexOf(type) === index).join(', ')}
                   >
-                    <span style={activeBarcode === group.barcode ? { textAlign: 'left', fontSize: '12.5px', whiteSpace: 'nowrap' } : { fontSize: '12.5px' }}>
+                    <span>
                       {activeBarcode === group.barcode ? 'Hide Samples' : `${group.samples.length} Samples`}
                     </span>
                     <div className="ripple-container">
@@ -358,13 +368,13 @@ const Samples = () => {
                   </button>
                     )}
                 </td>
-                <td style={{ width: '220px', textAlign: 'left', fontSize: '12.5px' }}>{group.location || '-'}</td>
-                <td style={{ textAlign: 'left', width: '100px', fontSize: '12.5px' }}>{group.latestDriver || '-'}</td>
-                <td style={{ width: '180px', textAlign: 'left', fontSize: '12.5px' }}>{group.latestDriverName || driverMap[group.latestDriver] || '-'}</td>
-                  <td style={{ textAlign: 'left', fontSize: '12.5px' }}>{group.latestDate ? group.latestDate.toLocaleString() : '-'}</td>
-                <td style={{ width: '140px', textAlign: 'left' }}>
+                <td>{group.location || '-'}</td>
+                <td>{group.latestDriver || '-'}</td>
+                <td>{group.latestDriverName || driverMap[group.latestDriver] || '-'}</td>
+                <td>{group.latestDate ? group.latestDate.toLocaleString() : '-'}</td>
+                <td>
                   {group.allApproved ? (
-                      <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12.5px', whiteSpace: 'nowrap' }}>
+                      <span className="status-approved">
                         {group.samples[0]?.arrivedDate?.toDate ? 
                           (group.samples.length === 1 ? 
                             // Full timestamp for single samples with custom formatting
@@ -387,14 +397,14 @@ const Samples = () => {
                                 const ampm = timeParts[1];
                                 return (
                                   <>
-                                    <span style={{ color: '#28a745', fontSize: '12.5px' }}>{parts[0]}</span>
-                                    <span style={{ color: '#000000', fontSize: '12.5px' }}> at </span>
-                                    <span style={{ color: '#28a745', fontSize: '12.5px' }}>{time}</span>
-                                    <span style={{ color: '#000000', fontSize: '12.5px' }}> {ampm}</span>
+                                    <span className="status-approved">{parts[0]}</span>
+                                    <span style={{ color: '#000000' }}> at </span>
+                                    <span className="status-approved">{time}</span>
+                                    <span style={{ color: '#000000' }}> {ampm}</span>
                                   </>
                                 );
                               }
-                              return <span style={{ color: '#28a745', fontSize: '12.5px' }}>{formatted}</span>;
+                              return <span className="status-approved">{formatted}</span>;
                             })() :
                             // Date only for multiple samples
                             group.samples[0].arrivedDate.toDate().toLocaleDateString('en-US', {
@@ -408,19 +418,14 @@ const Samples = () => {
                         }
                       </span>
                   ) : (
-                      <span style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '12.5px' }}>Not Arrived</span>
+                      <span className="status-not-arrived">Not Arrived</span>
                     )}
                   </td>
-                  <td style={{ textAlign: 'center' }}>
+                  <td>
                     <button
                       onClick={() => !group.allApproved && handleApprove(group)}
                       className={group.allApproved ? "btn-approve-all disabled" : "btn-approve-all"}
                       disabled={group.allApproved}
-                      style={group.allApproved ? { 
-                        opacity: 0.6, 
-                        cursor: 'not-allowed',
-                        background: 'hsl(218, 68%, 70%)'
-                      } : {}}
                     >
                       <span>{group.allApproved ? 'Approved' : 'Approve all'}</span>
                       <div className="ripple-container">
@@ -498,27 +503,15 @@ const Samples = () => {
                 {activeBarcode === group.barcode && group.samples.length > 0 && (
                   <tr>
                     <td colSpan={8} style={{ padding: 0, border: 'none' }}>
-                      <div style={{
-                        background: '#C8C4E1',
-                        padding: '0',
-                        margin: '0',
-                        borderRadius: '8px',
-                        border: 'none',
-                        width: 'calc(100vw - 11px)',
-                        marginLeft: '5px',
-                        marginRight: '5px',
-                        transform: 'translateX(-4px)',
-                        overflowX: 'auto'
-                      }}>
-
-                        <table style={{ width: '100%', borderCollapse: 'collapse', marginLeft: '0', marginRight: '0', minWidth: '1400px' }}>
+                      <div className="expanded-row">
+                        <table className="expanded-table" style={{ width: '100%' }}>
                           <thead>
-                            <tr style={{ borderBottom: '2px solid #dee2e6' }}>
-                              <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>SID</th>
-                              <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Sample Type</th>
-                              <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Scanned Date</th>
-                              <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Arrived Date</th>
-                              <th style={{ padding: '0.5rem', textAlign: 'center', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff' }}>Action</th>
+                            <tr>
+                              <th>SID</th>
+                              <th>Sample Type</th>
+                              <th>Scanned Date</th>
+                              <th>Arrived Date</th>
+                              <th>Action</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -528,15 +521,15 @@ const Samples = () => {
                               const bNum = b.subSampleNumber || parseInt(b.SID?.split('_').pop() || '0');
                               return aNum - bNum; // Sort in ascending order
                             }).map((sample, sampleIdx) => (
-                              <tr key={sample._docId || sampleIdx} style={{ borderBottom: '1px solid #f8f9fa' }}>
-                                <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem', paddingRight: '3rem' }}>{sample.SID || '-'}</td>
-                                <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: 'calc(1rem + 12px)' }}>{sample.sampleType || '-'}</td>
-                                <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem' }}>
+                              <tr key={sample._docId || sampleIdx}>
+                                <td>{sample.SID || '-'}</td>
+                                <td>{sample.sampleType || '-'}</td>
+                                <td>
                                   {sample.date?.toDate ? sample.date.toDate().toLocaleString() : '-'}
                                 </td>
-                                <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem' }}>
+                                <td>
                                   {sample.arrivedDate?.toDate ? (
-                                    <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12.5px' }}>
+                                    <span className="status-approved">
                                       {(() => {
                                         const date = sample.arrivedDate.toDate();
                                         const formatted = date.toLocaleString('en-US', {
@@ -556,39 +549,25 @@ const Samples = () => {
                                           const ampm = timeParts[1];
                                           return (
                                             <>
-                                              <span style={{ color: '#28a745', fontSize: '12.5px' }}>{parts[0]}</span>
-                                              <span style={{ color: '#000000', fontSize: '12.5px' }}> at </span>
-                                              <span style={{ color: '#28a745', fontSize: '12.5px' }}>{time}</span>
-                                              <span style={{ color: '#000000', fontSize: '12.5px' }}> {ampm}</span>
+                                              <span className="status-approved">{parts[0]}</span>
+                                              <span style={{ color: '#000000' }}> at </span>
+                                              <span className="status-approved">{time}</span>
+                                              <span style={{ color: '#000000' }}> {ampm}</span>
                                             </>
                                           );
                                         }
-                                        return <span style={{ color: '#28a745', fontSize: '12.5px' }}>{formatted}</span>;
+                                        return <span className="status-approved">{formatted}</span>;
                                       })()}
                                     </span>
                                   ) : (
-                                    <span style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '12.5px' }}>Not Arrived</span>
+                                    <span className="status-not-arrived">Not Arrived</span>
                                   )}
                                 </td>
-                                <td style={{ padding: '0.5rem', fontSize: '12.5px', textAlign: 'center' }}>
+                                <td>
                                   <button
-                                    onClick={() => {
-                                      if (!sample.arrivedDate?.toDate && sample._docId) {
-                                        const sampleRef = doc(db, "samples", sample._docId);
-                                        updateDoc(sampleRef, { arrivedDate: new Date() });
-                                      }
-                                    }}
+                                    onClick={() => !sample.arrivedDate?.toDate && handleApproveSample(sample, group.barcode)}
                                     className={sample.arrivedDate?.toDate ? "btn disabled" : "btn"}
                                     disabled={sample.arrivedDate?.toDate}
-                                    style={{ 
-                                      padding: '0.2em 0.4em', 
-                                      fontSize: '0.9em',
-                                      ...(sample.arrivedDate?.toDate ? { 
-                                        opacity: 0.6, 
-                                        cursor: 'not-allowed',
-                                        background: 'hsl(218, 68%, 70%)'
-                                      } : {})
-                                    }}
                                   >
                                     <span>{sample.arrivedDate?.toDate ? 'Approved' : 'Approve'}</span>
                                     <div className="ripple-container">
@@ -619,9 +598,23 @@ const Samples = () => {
         </tbody>
       </table>
       </div>
-      <div style={{ fontSize: '0.9em', marginTop: '0.3em', color: '#555' }}>
-        Total Barcodes: {samples.length}
+        <div className="table-footer">
+          <span>Total Barcodes: {samples.length}</span>
+        </div>
       </div>
+      {/* CSS Animation for notification */}
+      <style>{`
+        @keyframes slideInRight {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+      `}</style>
     </div>
   );
 };

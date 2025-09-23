@@ -70,6 +70,8 @@ const IT = () => {
   const navigate = useNavigate();
   const [highlightedRowId, setHighlightedRowId] = useState(null); // For row highlight
   const [searchCategory, setSearchCategory] = useState(""); // '' means none selected
+  const [searchRole, setSearchRole] = useState(""); // '' means none selected
+  const [searchStatus, setSearchStatus] = useState(""); // '' means none selected
   const adminsBtnRef = useRef(null);
   const driversBtnRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -81,6 +83,9 @@ const IT = () => {
   const [modalData, setModalData] = useState({ userId: null, userName: null });
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  // Table sorting state (align with Resignated/Samples behavior)
+  const [sortField, setSortField] = useState("userId");
+  const [sortAsc, setSortAsc] = useState(true);
 
   // Enhanced outside click handler
   useEffect(() => {
@@ -173,8 +178,8 @@ const IT = () => {
       role,
       userId: userIdVal,
       createdAt: user.createdAt || new Date(),
-      online: false, // default offline
-      networkStatus: 'offline', // default offline
+      online: true, // drivers are always online once registered
+      networkStatus: 'online', // drivers are always online once registered
     });
     await deleteDoc(doc(db, "users", userId));
     setPendingRoles((prev) => {
@@ -208,8 +213,8 @@ const IT = () => {
       role,
       userId: userIdVal,
       createdAt: user.createdAt || new Date(),
-      online: false, // default offline
-      networkStatus: 'offline', // default offline
+      online: true, // drivers are always online once registered
+      networkStatus: 'online', // drivers are always online once registered
     });
     // Optionally, delete from users collection if it exists
     await deleteDoc(doc(db, "users", userId));
@@ -326,19 +331,84 @@ const IT = () => {
   // Drivers: use driverUsers state, sorted by userId
   const sortedDriverUsers = driverUsers.sort((a, b) => (a.userId || '').localeCompare(b.userId || ''));
 
-  // Filtered lists based on searchTerm (character-by-character, starts-with, case-insensitive)
-  const filterByName = (arr) => {
-    if (!searchTerm.trim()) return [];
-    return arr.filter(user =>
-      (user.name || "").toLowerCase().startsWith(searchTerm.trim().toLowerCase())
-    );
-  };
-  const filteredAdmins = filterByName(sortedAdminUsers);
-  const filteredDrivers = filterByName(sortedDriverUsers);
+  // Functional filtering logic
+  const filterUsers = (users, userType) => {
+    return users.filter(user => {
+      // Text search filter
+      const searchMatch = !searchTerm.trim() || 
+        (user.name || "").toLowerCase().includes(searchTerm.trim().toLowerCase()) ||
+        (user.email || "").toLowerCase().includes(searchTerm.trim().toLowerCase()) ||
+        (user.userId || "").toLowerCase().includes(searchTerm.trim().toLowerCase());
 
-  // Sort search results alphabetically by name (ascending)
-  const filteredAdminsSorted = [...filteredAdmins].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-  const filteredDriversSorted = [...filteredDrivers].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      // Category filter
+      const categoryMatch = !searchCategory || 
+        (searchCategory === "admins" && userType === "admin") ||
+        (searchCategory === "drivers" && userType === "driver") ||
+        (searchCategory === "pending" && userType === "pending");
+
+      // Role filter
+      const roleMatch = !searchRole || user.role === searchRole;
+
+      // Status filter
+      const statusMatch = !searchStatus || 
+        (searchStatus === "approved" && user.approved === true) ||
+        (searchStatus === "pending" && user.approved !== true);
+
+      return searchMatch && categoryMatch && roleMatch && statusMatch;
+    });
+  };
+
+  // Apply filters to different user types
+  const filteredPendingUsers = filterUsers(pendingUsers, "pending");
+  const filteredAdmins = filterUsers(sortedAdminUsers, "admin");
+  const filteredDrivers = filterUsers(sortedDriverUsers, "driver");
+
+  // Combine all filtered results
+  const allFilteredUsers = [...filteredPendingUsers, ...filteredAdmins, ...filteredDrivers];
+
+  // Sorting logic applied to combined filtered list
+  const sortedAllFilteredUsers = [...allFilteredUsers].sort((a, b) => {
+    // Normalize values based on field
+    const field = sortField;
+    let aVal;
+    let bVal;
+    if (field === 'status') {
+      const statusStr = (u) => (u.approved === true ? 'approved' : (u.approved !== true && u.approved !== false ? 'pending' : 'pending'));
+      aVal = statusStr(a);
+      bVal = statusStr(b);
+    } else if (field === 'role') {
+      aVal = (a.role || '').toString();
+      bVal = (b.role || '').toString();
+    } else if (field === 'userId') {
+      aVal = (a.userId || '').toString();
+      bVal = (b.userId || '').toString();
+    } else if (field === 'name') {
+      aVal = (a.name || '').toString();
+      bVal = (b.name || '').toString();
+    } else if (field === 'email') {
+      aVal = (a.email || '').toString();
+      bVal = (b.email || '').toString();
+    } else {
+      aVal = (a.userId || '').toString();
+      bVal = (b.userId || '').toString();
+    }
+    return sortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+  });
+
+  // Sort controls
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortAsc((asc) => !asc);
+    } else {
+      setSortField(field);
+      setSortAsc(true);
+    }
+  };
+
+  const getSortIcon = (field) => {
+    if (field !== sortField) return '';
+    return sortAsc ? 'sort-asc' : 'sort-desc';
+  };
 
   // Calculate stats
   const totalUsers = sortedAdminUsers.length + sortedDriverUsers.length;
@@ -368,7 +438,7 @@ const IT = () => {
             </div>
           </div>
 
-          {/* Filters */}
+          {/* Functional Search System */}
           <div className="filter-card">
             <div className="filter-grid">
               <div className="filter-input">
@@ -376,48 +446,50 @@ const IT = () => {
                   <circle cx="11" cy="11" r="8"></circle>
                   <path d="m21 21-4.35-4.35"></path>
                 </svg>
-        <input
-          type="text"
-                  placeholder="SEARCH USERS..." 
+                <input
+                  type="text"
+                  placeholder="Search by name, email, or ID..." 
                   className="search-field"
-          value={searchTerm}
+                  value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  onFocus={() => setSearchActive(true)}
-          ref={searchInputRef}
                 />
-        </div>
+              </div>
+
+
 
               <div className="filter-select">
-                <select className="select-field select-blue" value={searchCategory} onChange={(e) => setSearchCategory(e.target.value)}>
-                  <option value="">SEARCH IN: ALL</option>
-                  <option value="admins">SEARCH IN: ADMINS</option>
-                  <option value="drivers">SEARCH IN: DRIVERS</option>
+                <select 
+                  className="select-field select-indigo"
+                  value={searchRole}
+                  onChange={(e) => setSearchRole(e.target.value)}
+                >
+                  <option value="">All Roles</option>
+                  <option value="admin">Admin</option>
+                  <option value="driver">Driver</option>
                 </select>
-      </div>
+              </div>
 
               <div className="filter-select">
-                <select className="select-field select-indigo">
-                  <option value="all">ROLE: ALL</option>
-                  <option value="admin">ROLE: ADMIN</option>
-                  <option value="driver">ROLE: DRIVER</option>
-                </select>
-                </div>
-
-              <div className="filter-select">
-                <select className="select-field select-sky">
-                  <option value="all">STATUS: ALL</option>
-                  <option value="approved">STATUS: APPROVED</option>
-                  <option value="pending">STATUS: PENDING</option>
+                <select 
+                  className="select-field select-sky"
+                  value={searchStatus}
+                  onChange={(e) => setSearchStatus(e.target.value)}
+                >
+                  <option value="">All Statuses</option>
+                  <option value="approved">Approved</option>
+                  <option value="pending">Pending</option>
                 </select>
               </div>
             </div>
 
             <div className="filter-summary">
               <div className="active-filters">
-                <span>◄ FILTERS ACTIVE ►</span>
+                <span>Active Filters:</span>
                 <div id="filterBadges">
-                  {searchTerm && <span className="filter-badge">SEARCH: {searchTerm}</span>}
-                  {searchCategory && <span className="filter-badge">CATEGORY: {searchCategory.toUpperCase()}</span>}
+                  {searchTerm && <span className="filter-badge">Search: {searchTerm}</span>}
+                  {searchCategory && <span className="filter-badge">Category: {searchCategory}</span>}
+                  {searchRole && <span className="filter-badge">Role: {searchRole}</span>}
+                  {searchStatus && <span className="filter-badge">Status: {searchStatus}</span>}
                 </div>
               </div>
               <button 
@@ -425,6 +497,8 @@ const IT = () => {
                 onClick={() => {
                   setSearchTerm("");
                   setSearchCategory("");
+                  setSearchRole("");
+                  setSearchStatus("");
                 }}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -432,177 +506,177 @@ const IT = () => {
                   <line x1="15" y1="9" x2="9" y2="15"></line>
                   <line x1="9" y1="9" x2="15" y2="15"></line>
                 </svg>
-                CLEAR ALL
+                Clear All
               </button>
             </div>
-        </div>
+          </div>
 
           {/* Data Table */}
-          <div className="table-card">
+          <div style={{ width: '100%', maxWidth: '100%', margin: '0 auto', padding: '0 5px' }}>
             <div className="table-container">
-              <table className="data-table">
-            <thead>
-                  <tr className="table-header">
-                    <th className="th-cell">ID</th>
-                    <th className="th-cell">USER NAME</th>
-                    <th className="th-cell">EMAIL</th>
-                    <th className="th-cell">ROLE</th>
-                    <th className="th-cell">STATUS</th>
-                    <th className="th-cell th-actions">ACTIONS</th>
-              </tr>
-            </thead>
-                <tbody id="tableBody">
-                  {/* New Registrations */}
-              {pendingUsers.map((user) => (
-                    <tr key={user.id} className="table-row pending">
-                      <td className="td-cell td-id">{user.userId || "-"}</td>
-                      <td className="td-cell td-name">{user.name || "-"}</td>
-                      <td className="td-cell td-email">{user.email || "-"}</td>
-                      <td className="td-cell td-role">
-                    {user.role && user.role !== 'role' ? (
-                      <span style={{ textTransform: 'capitalize', fontWeight: 500 }}>
-                        {user.role}
-                      </span>
+              <div className="table-wrapper">
+                <table className="excel-table" style={{ width: '100%' }}>
+                  <thead>
+                    <tr>
+                      <th className={getSortIcon('userId')} onClick={() => handleSort('userId')}>ID</th>
+                      <th className={getSortIcon('name')} onClick={() => handleSort('name')}>USER NAME</th>
+                      <th className={getSortIcon('email')} onClick={() => handleSort('email')}>EMAIL</th>
+                      <th className={getSortIcon('role')} onClick={() => handleSort('role')}>ROLE</th>
+                      <th className={getSortIcon('status')} onClick={() => handleSort('status')}>STATUS</th>
+                      <th>ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedAllFilteredUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#93c5fd' }}>
+                          No users found matching the current filters.
+                        </td>
+                      </tr>
                     ) : (
-                      <div className="paste-button">
-                        <button className="button">
-                          {pendingRoles[user.id] ? `${pendingRoles[user.id].charAt(0).toUpperCase() + pendingRoles[user.id].slice(1)} ▼` : 'Role ▼'}
-                        </button>
-                        <div className="dropdown-content">
-                          <a id="top" href="#" onClick={(e) => { e.preventDefault(); handlePendingRoleChange(user.id, 'admin'); }}>Admin</a>
-                          <a id="middle" href="#" onClick={(e) => { e.preventDefault(); handlePendingRoleChange(user.id, 'driver'); }}>Driver</a>
-                        </div>
-                      </div>
+                      sortedAllFilteredUsers.map((user) => {
+                        // Determine user type for proper rendering
+                        const isPending = user.approved !== true && user.approved !== false;
+                        const isAdmin = user.role === "admin" && user.approved === true;
+                        const isDriver = user.role === "driver" && user.approved === true;
+
+                        return (
+                          <tr key={user.id} id={`user-row-${user.id}`}>
+                            <td>{user.userId || "-"}</td>
+                            <td>{user.name || "-"}</td>
+                            <td>{user.email || "-"}</td>
+                            <td>
+                              {isPending ? (
+                                user.role && user.role !== 'role' ? (
+                                  <span style={{ textTransform: 'capitalize', fontWeight: 500 }}>
+                                    {user.role}
+                                  </span>
+                                ) : (
+                                  <div className="paste-button">
+                                    <button className="button">
+                                      {pendingRoles[user.id] ? `${pendingRoles[user.id].charAt(0).toUpperCase() + pendingRoles[user.id].slice(1)} ▼` : 'Role ▼'}
+                                    </button>
+                                    <div className="dropdown-content">
+                                      <a id="top" href="#" onClick={(e) => { e.preventDefault(); handlePendingRoleChange(user.id, 'admin'); }}>Admin</a>
+                                      <a id="middle" href="#" onClick={(e) => { e.preventDefault(); handlePendingRoleChange(user.id, 'driver'); }}>Driver</a>
+                                    </div>
+                                  </div>
+                                )
+                              ) : (
+                                <span style={{ textTransform: 'capitalize', fontWeight: 500 }}>
+                                  {user.role || (isAdmin ? "admin" : "driver")}
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              {isPending ? (
+                                <span className="status-pending">PENDING</span>
+                              ) : (
+                                <span className="status-active">APPROVED</span>
+                              )}
+                            </td>
+                            <td>
+                              <div className="action-buttons">
+                                {isPending ? (
+                                  <>
+                                    <button
+                                      className="btn"
+                                      onClick={() => handleApprovePending(user.id)}
+                                      disabled={!pendingRoles[user.id]}
+                                    >
+                                      <span>APPROVE</span>
+                                      <div className="ripple-container">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                      </div>
+                                    </button>
+                                    <button
+                                      className="btn btn-danger"
+                                      onClick={() => handleReject(user.id)}
+                                    >
+                                      <span>REJECT</span>
+                                      <div className="ripple-container">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                      </div>
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    className="btn btn-danger"
+                                    onClick={() => handleRemove(user.id)}
+                                  >
+                                    <span>REMOVE</span>
+                                    <div className="ripple-container">
+                                      <span></span>
+                                      <span></span>
+                                      <span></span>
+                                      <span></span>
+                                      <span></span>
+                                      <span></span>
+                                      <span></span>
+                                      <span></span>
+                                      <span></span>
+                                      <span></span>
+                                    </div>
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
-                  </td>
-                      <td className="td-cell td-status">
-                        <span style={{ color: '#facc15', fontWeight: 700 }}>PENDING</span>
-                      </td>
-                      <td className="td-cell td-actions">
-                        <div className="action-buttons">
-                    <button
-                            className="action-btn btn-approve"
-                      onClick={() => handleApprovePending(user.id)}
-                      disabled={!pendingRoles[user.id]}
-                    >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M20 6L9 17l-5-5"></path>
-                            </svg>
-                            APPROVE
-                    </button>
-                    <button
-                            className="action-btn btn-view"
-                      onClick={() => handleReject(user.id)}
-                    >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M18 6L6 18M6 6l12 12"></path>
-                            </svg>
-                            REJECT
-                    </button>
-                        </div>
-                  </td>
-                </tr>
-              ))}
-                  
-                  {/* Admins */}
-              {sortedAdminUsers.map((user) => (
-                    <tr key={user.id} className="table-row approved" id={`user-row-${user.id}`}>
-                      <td className="td-cell td-id">{user.userId || "-"}</td>
-                      <td className="td-cell td-name">{user.name || "-"}</td>
-                      <td className="td-cell td-email">{user.email || "-"}</td>
-                      <td className="td-cell td-role">{user.role || "admin"}</td>
-                      <td className="td-cell td-status">
-                        <span style={{ color: '#22c55e', fontWeight: 700 }}>APPROVED</span>
-                  </td>
-                      <td className="td-cell td-actions">
-                        <div className="action-buttons">
-                    <button
-                            className="action-btn btn-view"
-                      onClick={() => handleRemove(user.id)}
-                    >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            </svg>
-                            REMOVE
-                    </button>
-                        </div>
-                  </td>
-                </tr>
-              ))}
-                  
-                  {/* Drivers */}
-              {sortedDriverUsers.map((user) => (
-                    <tr key={user.id} className="table-row approved" id={`user-row-${user.id}`}>
-                      <td className="td-cell td-id">{user.userId || "-"}</td>
-                      <td className="td-cell td-name">{user.name || "-"}</td>
-                      <td className="td-cell td-email">{user.email || "-"}</td>
-                      <td className="td-cell td-role">{user.role || "driver"}</td>
-                      <td className="td-cell td-status">
-                        <span style={{ color: '#22c55e', fontWeight: 700 }}>APPROVED</span>
-                  </td>
-                      <td className="td-cell td-actions">
-                        <div className="action-buttons">
-                    <button
-                            className="action-btn btn-view"
-                      onClick={() => handleRemove(user.id)}
-                    >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            </svg>
-                            REMOVE
-                    </button>
-                        </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </tbody>
+                </table>
+                <div className="table-footer">
+                  <span>Showing: {allFilteredUsers.length} of {totalUsers} users | Pending: {pendingCount} | Total Admins: {sortedAdminUsers.length} | Total Drivers: {sortedDriverUsers.length}</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Stats - At Bottom */}
-          <div className="stats-grid">
-            <div className="stat-card stat-blue">
-              <p className="stat-number">{totalUsers}</p>
-              <p className="stat-label">TOTAL USERS</p>
-              <div className="stat-bar stat-bar-blue"></div>
-            </div>
 
-            <div className="stat-card stat-cyan">
-              <p className="stat-number">{sortedDriverUsers.length}</p>
-              <p className="stat-label">TOTAL DRIVERS</p>
-              <div className="stat-bar stat-bar-cyan"></div>
-            </div>
-
-            <div className="stat-card stat-yellow">
-              <p className="stat-number">{pendingCount}</p>
-              <p className="stat-label">PENDING</p>
-              <div className="stat-bar stat-bar-yellow"></div>
-            </div>
-
-            <div className="stat-card stat-green">
-              <p className="stat-number">{sortedAdminUsers.length}</p>
-              <p className="stat-label">TOTAL ADMINS</p>
-              <div className="stat-bar stat-bar-green"></div>
-            </div>
-          </div>
           
           {/* View Removed Users Button */}
           <div style={{ textAlign: 'center', marginTop: '30px', padding: '20px', borderTop: '2px solid #374151' }}>
             <button
-              className="action-btn btn-view"
+              className="btn"
               onClick={() => navigate('/resignated')}
-              style={{
-                padding: '12px 24px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                transition: 'all 0.3s ease'
-              }}
             >
-              View Removed Users
+              <span>View Removed Users</span>
+              <div className="ripple-container">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
             </button>
           </div>
+          
+
         </div>
       
       {/* Custom Confirmation Modal */}

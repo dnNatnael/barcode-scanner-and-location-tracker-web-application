@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { db } from "../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
+import "../Styles/IT.css";
 
 const formatDate = (date) => {
   if (!date) return "-";
@@ -163,6 +164,24 @@ const Resignated = () => {
     }
   };
 
+  // Sort handler
+  const handleSort = (field, isAdmin) => {
+    if (isAdmin) {
+      handleAdminSort(field);
+    } else {
+      handleDriverSort(field);
+    }
+  };
+
+  // Get sort icon
+  const getSortIcon = (field, isAdmin) => {
+    const currentField = isAdmin ? adminSortField : driverSortField;
+    const isAsc = isAdmin ? adminSortAsc : driverSortAsc;
+    
+    if (field !== currentField) return '';
+    return isAsc ? 'sort-asc' : 'sort-desc';
+  };
+
   return (
     <div className="retro-wave-page">
       <div className="container">
@@ -193,9 +212,9 @@ const Resignated = () => {
               position: 'absolute',
               top: 20,
               left: 20,
-              padding: '0.18em 0.7em',
-              fontSize: '0.85em',
-              borderRadius: '8px',
+              padding: '0.5rem 1rem',
+              fontSize: '0.9rem',
+              borderRadius: '6px',
               border: 'none',
               background: 'linear-gradient(90deg, #1c6954 0%, #23a393 100%)',
               color: '#fff',
@@ -397,75 +416,140 @@ const Resignated = () => {
               )}
             </div>
           )}
-          <h2>Admins</h2>
-          <table className="resignated-users-table">
-            <thead>
-              <tr>
-                <th onClick={() => handleAdminSort("userId")}>ID</th>
-                <th onClick={() => handleAdminSort("name")}>Name</th>
-                <th onClick={() => handleAdminSort("email")}>Email</th>
-                <th onClick={() => handleAdminSort("role")}>Role</th>
-                <th onClick={() => handleAdminSort("joinedAt")}>Joined Date</th>
-                <th onClick={() => handleAdminSort("removedAt")}>Removed Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedAdminUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', color: '#888' }}>
-                    No removed admins found.
-                  </td>
-                </tr>
-              ) : (
-                sortedAdminUsers.map((user) => (
-                  <tr key={user.id} className={`removed${highlightedRowId === `admin-row-${user.userId}` ? ' highlighted' : ''}`} id={`admin-row-${user.userId}`}>
-                    <td>{user.userId || "-"}</td>
-                    <td>{user.name || "-"}</td>
-                    <td>{user.email || "-"}</td>
-                    <td>{user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "-"}</td>
-                    <td>{user.joinedAt ? formatDate(user.joinedAt) : "-"}</td>
-                    <td>{user.removedAt ? formatDate(user.removedAt) : "-"}</td>
+          <div className="table-container">
+            <div className="table-wrapper">
+              <h2 className="section-title">Removed Admins</h2>
+              <table className="excel-table">
+                <thead>
+                  <tr>
+                    <th 
+                      className={getSortIcon('userId', true)} 
+                      onClick={() => handleSort('userId', true)}
+                    >
+                      User ID
+                    </th>
+                    <th 
+                      className={getSortIcon('name', true)}
+                      onClick={() => handleSort('name', true)}
+                    >
+                      Name
+                    </th>
+                    <th 
+                      className={getSortIcon('email', true)}
+                      onClick={() => handleSort('email', true)}
+                    >
+                      Email
+                    </th>
+                    <th 
+                      className={getSortIcon('joinedAt', true)}
+                      onClick={() => handleSort('joinedAt', true)}
+                    >
+                      Joined
+                    </th>
+                    <th 
+                      className={getSortIcon('removedAt', true)}
+                      onClick={() => handleSort('removedAt', true)}
+                    >
+                      Removed
+                    </th>
                   </tr>
-                ))
+                </thead>
+                <tbody>
+                  {sortedAdminUsers.map((admin) => (
+                    <tr 
+                      key={admin.id} 
+                      id={`admin-row-${admin.id}`} 
+                      className={highlightedRowId === `admin-row-${admin.id}` ? 'highlighted' : ''}
+                    >
+                      <td>{admin.userId}</td>
+                      <td>
+                        <div className="user-info">
+                          <span className="user-name">{admin.name}</span>
+                        </div>
+                      </td>
+                      <td>{admin.email || '-'}</td>
+                      <td>{formatDate(admin.joinedAt)}</td>
+                      <td>{formatDate(admin.removedAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {sortedAdminUsers.length === 0 && (
+                <div className="no-results">
+                  <p>No removed admins found</p>
+                </div>
               )}
-            </tbody>
-          </table>
+            </div>
+          </div>
+
+          <div className="table-container" style={{ marginTop: '2rem' }}>
+            <div className="table-wrapper">
+              <h2 className="section-title">Removed Drivers</h2>
+              <table className="excel-table">
+                <thead>
+                  <tr>
+                    <th 
+                      className={getSortIcon('userId', false)} 
+                      onClick={() => handleSort('userId', false)}
+                    >
+                      User ID
+                    </th>
+                    <th 
+                      className={getSortIcon('name', false)}
+                      onClick={() => handleSort('name', false)}
+                    >
+                      Name
+                    </th>
+                    <th 
+                      className={getSortIcon('email', false)}
+                      onClick={() => handleSort('email', false)}
+                    >
+                      Email
+                    </th>
+                    <th 
+                      className={getSortIcon('joinedAt', false)}
+                      onClick={() => handleSort('joinedAt', false)}
+                    >
+                      Joined
+                    </th>
+                    <th 
+                      className={getSortIcon('removedAt', false)}
+                      onClick={() => handleSort('removedAt', false)}
+                    >
+                      Removed
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedDriverUsers.map((driver) => (
+                    <tr 
+                      key={driver.id} 
+                      id={`driver-row-${driver.id}`} 
+                      className={highlightedRowId === `driver-row-${driver.id}` ? 'highlighted' : ''}
+                    >
+                      <td>{driver.userId}</td>
+                      <td>
+                        <div className="user-info">
+                          <span className="user-name">{driver.name}</span>
+                        </div>
+                      </td>
+                      <td>{driver.email || '-'}</td>
+                      <td>{formatDate(driver.joinedAt)}</td>
+                      <td>{formatDate(driver.removedAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {sortedDriverUsers.length === 0 && (
+                <div className="no-results">
+                  <p>No removed drivers found</p>
+                </div>
+              )}
+            </div>
+          </div>
           <div style={{ fontSize: '0.8em', marginTop: '0.5em', color: '#ffffff', textAlign: 'left' }}>
             Total Removed Admins: {sortedAdminUsers.length}
           </div>
-          <h2>Drivers</h2>
-          <table className="resignated-users-table">
-            <thead>
-              <tr>
-                <th onClick={() => handleDriverSort("userId")}>ID</th>
-                <th onClick={() => handleDriverSort("name")}>Name</th>
-                <th onClick={() => handleDriverSort("email")}>Email</th>
-                <th onClick={() => handleDriverSort("role")}>Role</th>
-                <th onClick={() => handleDriverSort("joinedAt")}>Joined Date</th>
-                <th onClick={() => handleDriverSort("removedAt")}>Removed Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedDriverUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', color: '#888' }}>
-                    No removed drivers found.
-                  </td>
-                </tr>
-              ) : (
-                sortedDriverUsers.map((user) => (
-                  <tr key={user.id} className={`removed${highlightedRowId === `driver-row-${user.userId}` ? ' highlighted' : ''}`} id={`driver-row-${user.userId}`}>
-                    <td>{user.userId || "-"}</td>
-                    <td>{user.name || "-"}</td>
-                    <td>{user.email || "-"}</td>
-                    <td>{user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "-"}</td>
-                    <td>{user.joinedAt ? formatDate(user.joinedAt) : "-"}</td>
-                    <td>{user.removedAt ? formatDate(user.removedAt) : "-"}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
           <div style={{ fontSize: '0.8em', marginTop: '0.5em', color: '#ffffff', textAlign: 'left' }}>
             Total Removed Drivers: {sortedDriverUsers.length}
           </div>

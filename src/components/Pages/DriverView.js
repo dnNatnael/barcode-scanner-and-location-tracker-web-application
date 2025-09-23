@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { auth, db } from "../../firebase";
 import { collection, query, orderBy, onSnapshot, where, getDocs, updateDoc, getDoc, doc, serverTimestamp, deleteDoc } from "firebase/firestore";
-import "../Styles/Samples.css";
+import "../Styles/ExcelTable.css";
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
@@ -487,17 +487,18 @@ function SamplesTable({ driverName, driverId }) {
         onConfirm={() => confirmAction && confirmAction()}
         onCancel={() => setConfirmOpen(false)}
       />
-      <h2 style={{ margin: '1.5em 0 0.5em 0', textAlign: 'left', marginTop: '2em' }}>Samples collected by {driverName}</h2>
-      <div style={{ overflowX: 'auto', width: '100%', marginTop: '-10px' }}>
-        <table className="it-users-table" style={{ width: '100%', minWidth: '1200px' }}>
+      <div className="table-container" style={{ margin: '0', padding: '0' }}>
+        <h2 className="page-title">Samples collected by {driverName}</h2>
+        <div className="table-wrapper" style={{ margin: '0', padding: '0' }}>
+          <table className="excel-table" style={{ width: '100%' }}>
           <thead>
             <tr>
-              <th style={{ fontSize: '1.5em', color: '#102542' }}>SID</th>
-              <th style={{ fontSize: '1.5em', color: '#102542', textAlign: 'left', width: '140px' }}>Sample Type</th>
-              <th style={{ width: '220px', fontSize: '1.5em', color: '#102542', textAlign: 'left' }}>Location</th>
-              <th style={{ fontSize: '1.5em', color: '#102542', textAlign: 'left' }}>Scanned Date</th>
-              <th style={{ width: '260px', fontSize: '1.5em', color: '#102542', textAlign: 'left', paddingRight: '8rem' }}>Arrived Date</th>
-              <th style={{ fontSize: '1.8em', color: '#102542', textAlign: 'left', paddingLeft: '1rem' }}>Action</th>
+              <th>SID</th>
+              <th>Sample Type</th>
+              <th>Location</th>
+              <th>Scanned Date</th>
+              <th>Arrived Date</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -506,19 +507,12 @@ function SamplesTable({ driverName, driverId }) {
             ) : (
               samples.map((group, idx) => (
                 <React.Fragment key={group.barcode || idx}>
-                  <tr className={group.allApproved ? "approved" : "pending"} style={activeBarcode === group.barcode ? { backgroundColor: '#c3e6cb', borderLeft: '8px solid #28a745', boxShadow: '0 4px 12px rgba(40, 167, 69, 0.25)', transform: 'scale(1.01)' } : {}}>
-                    <td style={activeBarcode === group.barcode ? { color: '#0066cc', fontWeight: 'bold', fontSize: '12.5px' } : { fontSize: '12.5px' }}>{group.barcode ? `SID-${group.barcode}` : '-'}</td>
-                    <td style={{ textAlign: 'left', fontSize: '12.5px' }}>
+                  <tr>
+                    <td>{group.barcode ? `SID-${group.barcode}` : '-'}</td>
+                    <td>
                       {group.samples.length === 1 ? (
                         // Display sample type directly for single samples
-                        <span style={{ 
-                          fontSize: '12.5px',
-                          fontWeight: '500',
-                          color: '#495057',
-                          textAlign: 'left',
-                          display: 'block',
-                          paddingLeft: '20px'
-                        }}>
+                        <span>
                           {group.samples[0].sampleType || '-'}
                         </span>
                       ) : (
@@ -536,20 +530,19 @@ function SamplesTable({ driverName, driverId }) {
                             }
                           }}
                           className="btn"
-                          style={{ position: 'relative' }}
                           title={group.samples.map(sample => sample.sampleType || 'Unknown').filter((type, index, arr) => arr.indexOf(type) === index).join(', ')}
                         >
-                          <span style={activeBarcode === group.barcode ? { textAlign: 'left', fontSize: '12.5px', whiteSpace: 'nowrap' } : { fontSize: '12.5px' }}>
+                          <span>
                             {activeBarcode === group.barcode ? 'Hide Samples' : `${group.samples.length} Samples`}
                           </span>
                         </button>
                       )}
                     </td>
-                    <td style={{ width: '220px', textAlign: 'left', fontSize: '12.5px' }}>{group.location || '-'}</td>
-                    <td style={{ textAlign: 'left', fontSize: '12.5px' }}>{group.latestDate ? group.latestDate.toLocaleString() : '-'}</td>
-                    <td style={{ width: '260px', textAlign: 'left', paddingRight: '8rem', whiteSpace: 'nowrap' }}>
+                    <td>{group.location || '-'}</td>
+                    <td>{group.latestDate ? group.latestDate.toLocaleString() : '-'}</td>
+                    <td>
                       {group.allApproved ? (
-                        <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12.5px', whiteSpace: 'nowrap' }}>
+                        <span className="status-approved">
                           {group.samples[0]?.arrivedDate?.toDate ? 
                             (group.samples.length === 1 ? 
                               // Full timestamp for single samples with custom formatting
@@ -572,14 +565,14 @@ function SamplesTable({ driverName, driverId }) {
                                   const ampm = timeParts[1];
                                   return (
                                     <>
-                                      <span style={{ color: '#28a745', fontSize: '12.5px' }}>{parts[0]}</span>
-                                      <span style={{ color: '#000000', fontSize: '12.5px' }}> at </span>
-                                      <span style={{ color: '#28a745', fontSize: '12.5px' }}>{time}</span>
-                                      <span style={{ color: '#000000', fontSize: '12.5px' }}> {ampm}</span>
+                                      <span className="status-approved">{parts[0]}</span>
+                                      <span style={{ color: '#000000' }}> at </span>
+                                      <span className="status-approved">{time}</span>
+                                      <span style={{ color: '#000000' }}> {ampm}</span>
                                     </>
                                   );
                                 }
-                                return <span style={{ color: '#28a745', fontSize: '12.5px' }}>{formatted}</span>;
+                                return <span className="status-approved">{formatted}</span>;
                               })() :
                               // Date only for multiple samples
                               group.samples[0].arrivedDate.toDate().toLocaleDateString('en-US', {
@@ -593,16 +586,14 @@ function SamplesTable({ driverName, driverId }) {
                           }
                         </span>
                       ) : (
-                        <span style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '12.5px' }}>Not Arrived</span>
+                        <span className="status-not-arrived">Not Arrived</span>
                       )}
                     </td>
-                    <td style={{ textAlign: 'left' }}>
+                    <td>
                       <button
                         onClick={() => handleDelete(group)}
                         className="btn-approve-all"
-                        style={{ background: 'linear-gradient(to right, #dc3545, #c82333)', color: '#fff', padding: '0.14em 0.35em' }}
-                        onMouseOver={e => { e.currentTarget.style.background = 'linear-gradient(to right, #c82333, #bd2130)'; e.currentTarget.style.transform = 'scale(1.02)'; }}
-                        onMouseOut={e => { e.currentTarget.style.background = 'linear-gradient(to right, #dc3545, #c82333)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                        style={{ background: 'linear-gradient(to right, #dc3545, #c82333)', color: '#fff' }}
                       >
                         <span>Clear</span>
                         <div className="ripple-container">
@@ -625,26 +616,15 @@ function SamplesTable({ driverName, driverId }) {
                   {activeBarcode === group.barcode && group.samples.length > 1 && (
                     <tr>
                       <td colSpan={6} style={{ padding: 0, border: 'none' }}>
-                        <div style={{
-                          background: '#C8C4E1',
-                          padding: '0',
-                          margin: '0',
-                          borderRadius: '8px',
-                          border: 'none',
-                          width: 'calc(100vw - 11px)',
-                          marginLeft: '5px',
-                          marginRight: '5px',
-                          transform: 'translateX(-4px)',
-                          overflowX: 'auto'
-                        }}>
-                          <table style={{ width: '100%', borderCollapse: 'collapse', marginLeft: '0', marginRight: '0', minWidth: '1400px' }}>
+                        <div className="expanded-row">
+                          <table className="expanded-table" style={{ width: '100%' }}>
                             <thead>
-                              <tr style={{ borderBottom: '2px solid #dee2e6' }}>
-                                <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>SID</th>
-                                <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Sample Type</th>
-                                <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Scanned Date</th>
-                                <th style={{ padding: '0.5rem', textAlign: 'left', fontSize: '1.5em', background: '#4F4A6B', color: '#ffffff', paddingLeft: '1rem' }}>Arrived Date</th>
-                                <th style={{ padding: '0.5rem', textAlign: 'center', fontSize: '1.8em', background: '#4F4A6B', color: '#ffffff' }}>Action</th>
+                              <tr>
+                                <th>SID</th>
+                                <th>Sample Type</th>
+                                <th>Scanned Date</th>
+                                <th>Arrived Date</th>
+                                <th>Action</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -654,15 +634,15 @@ function SamplesTable({ driverName, driverId }) {
                                 const bNum = b.subSampleNumber || parseInt(b.SID?.split('_').pop() || '0');
                                 return aNum - bNum; // Sort in ascending order
                               }).map((sample, sampleIdx) => (
-                                <tr key={sample._docId || sampleIdx} style={{ borderBottom: '1px solid #f8f9fa' }}>
-                                  <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem', paddingRight: '3rem' }}>{sample.SID || '-'}</td>
-                                  <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: 'calc(1rem + 12px)' }}>{sample.sampleType || '-'}</td>
-                                  <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem', whiteSpace: 'nowrap' }}>
+                                <tr key={sample._docId || sampleIdx}>
+                                  <td>{sample.SID || '-'}</td>
+                                  <td>{sample.sampleType || '-'}</td>
+                                  <td>
                                     {sample.date?.toDate ? sample.date.toDate().toLocaleString() : '-'}
                                   </td>
-                                  <td style={{ padding: '0.5rem', fontSize: '12.5px', paddingLeft: '1rem' }}>
+                                  <td>
                                     {sample.arrivedDate?.toDate ? (
-                                      <span style={{ color: '#28a745', fontWeight: 'bold', fontSize: '12.5px' }}>
+                                      <span className="status-approved">
                                         {(() => {
                                           const date = sample.arrivedDate.toDate();
                                           const formatted = date.toLocaleString('en-US', {
@@ -682,27 +662,25 @@ function SamplesTable({ driverName, driverId }) {
                                             const ampm = timeParts[1];
                                             return (
                                               <>
-                                                <span style={{ color: '#28a745', fontSize: '12.5px' }}>{parts[0]}</span>
-                                                <span style={{ color: '#000000', fontSize: '12.5px' }}> at </span>
-                                                <span style={{ color: '#28a745', fontSize: '12.5px' }}>{time}</span>
-                                                <span style={{ color: '#000000', fontSize: '12.5px' }}> {ampm}</span>
+                                                <span className="status-approved">{parts[0]}</span>
+                                                <span style={{ color: '#000000' }}> at </span>
+                                                <span className="status-approved">{time}</span>
+                                                <span style={{ color: '#000000' }}> {ampm}</span>
                                               </>
                                             );
                                           }
-                                          return <span style={{ color: '#28a745', fontSize: '12.5px' }}>{formatted}</span>;
+                                          return <span className="status-approved">{formatted}</span>;
                                         })()}
                                       </span>
                                     ) : (
-                                      <span style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '12.5px' }}>Not Arrived</span>
+                                      <span className="status-not-arrived">Not Arrived</span>
                                     )}
                                   </td>
-                                  <td style={{ padding: '0.5rem', fontSize: '12.5px', textAlign: 'center' }}>
+                                  <td>
                                     <button
                                       onClick={() => handleDeleteSample(sample, group.barcode)}
                                       className="btn"
-                                      style={{ padding: '0.2em 0.4em', fontSize: '0.9em', background: 'linear-gradient(to right, #dc3545, #c82333)', color: '#fff' }}
-                                      onMouseOver={e => { e.currentTarget.style.background = 'linear-gradient(to right, #c82333, #bd2130)'; e.currentTarget.style.transform = 'scale(1.02)'; }}
-                                      onMouseOut={e => { e.currentTarget.style.background = 'linear-gradient(to right, #dc3545, #c82333)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                      style={{ background: 'linear-gradient(to right, #dc3545, #c82333)', color: '#fff' }}
                                     >
                                       <span>Clear</span>
                                       <div className="ripple-container">
@@ -733,8 +711,9 @@ function SamplesTable({ driverName, driverId }) {
           </tbody>
         </table>
       </div>
-      <div style={{ fontSize: '0.9em', marginTop: '0.3em', color: '#555' }}>
-        Total Barcodes: {samples.length}
+        <div className="table-footer">
+          <span>Total Barcodes: {samples.length}</span>
+        </div>
       </div>
     </div>
   );
@@ -745,6 +724,7 @@ const DriverSampleScan = () => {
   const navigate = useNavigate();
   const driverName = location.state?.driverName || "Driver";
   const driverId = location.state?.driverId || "";
+  const cameraWasActive = location.state?.cameraWasActive || false;
 
   // Debug logging
   console.log("DriverSampleScan - driverName:", driverName);
@@ -877,35 +857,17 @@ const DriverSampleScan = () => {
   return (
     <ErrorBoundary>
       <button
-        onClick={() => navigate(-1)}
-        style={{
-          position: 'absolute',
-          top: 20,
-          left: 20,
-          padding: '0.18em 0.7em',
-          fontSize: '0.85em',
-          borderRadius: '8px',
-          border: 'none',
-          background: 'linear-gradient(90deg, #1c6954 0%, #23a393 100%)',
-          color: '#fff',
-          fontWeight: 700,
-          cursor: 'pointer',
-          boxShadow: '0 2px 8px rgba(44, 62, 80, 0.10)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          transition: 'all 0.2s',
-        }}
-        onMouseOver={e => {
-          e.currentTarget.style.background = 'linear-gradient(90deg, #155c47 0%, #1c6954 100%)';
-          e.currentTarget.style.transform = 'scale(1.06)';
-        }}
-        onMouseOut={e => {
-          e.currentTarget.style.background = 'linear-gradient(90deg, #1c6954 0%, #23a393 100%)';
-          e.currentTarget.style.transform = 'scale(1)';
-        }}
+        onClick={() => navigate('/driver-dashboard', { 
+          state: { 
+            name: driverName, 
+            cameraActive: cameraWasActive,
+            userId: driverId,
+            preserveSession: true
+          } 
+        })}
+        className="back-button"
       >
-        <span style={{ fontSize: '1em', marginRight: 3 }}>&larr;</span> <span style={{ fontSize: '0.95em' }}>Back</span>
+        <span>&larr;</span> <span>Back</span>
       </button>
       <SamplesTable driverName={driverName} driverId={driverId} />
     </ErrorBoundary>
