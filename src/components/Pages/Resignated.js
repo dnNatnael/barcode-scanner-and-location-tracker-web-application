@@ -17,9 +17,13 @@ const Resignated = () => {
   const [adminSortAsc, setAdminSortAsc] = useState(true);
   const [driverSortField, setDriverSortField] = useState("userId");
   const [driverSortAsc, setDriverSortAsc] = useState(true);
+  // Unified sorting for combined removed users table
+  const [sortField, setSortField] = useState("userId");
+  const [sortAsc, setSortAsc] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchCategory, setSearchCategory] = useState("");
-  const [searchActive, setSearchActive] = useState(false);
+  const [searchRole, setSearchRole] = useState(""); // '' | 'admin' | 'driver'
+  const [searchStatus, setSearchStatus] = useState("removed"); // keep default to removed
+  const [searchActive, setSearchActive] = useState(false); // retained but unused like IT
   const searchResultsRef = useRef(null);
   const adminsBtnRef = useRef(null);
   const driversBtnRef = useRef(null);
@@ -114,17 +118,23 @@ const Resignated = () => {
     return 0;
   });
 
-  // Search logic (same as IT page)
-  const filterByName = (arr) => {
-    if (!searchTerm.trim()) return [];
-    return arr.filter(user =>
-      (user.name || "").toLowerCase().startsWith(searchTerm.trim().toLowerCase())
-    );
+  // IT-like filtering
+  const filterUsers = (users, roleLabel) => {
+    return users.filter(user => {
+      const term = searchTerm.trim().toLowerCase();
+      const matchesText = !term ||
+        (user.name || "").toLowerCase().includes(term) ||
+        (user.email || "").toLowerCase().includes(term) ||
+        (user.userId || "").toLowerCase().includes(term);
+
+      const matchesRole = !searchRole || (user.role === searchRole);
+      const matchesStatus = !searchStatus || searchStatus === 'removed'; // all entries are removed on this page
+
+      return matchesText && matchesRole && matchesStatus;
+    });
   };
-  const filteredAdmins = filterByName(sortedAdminUsers);
-  const filteredDrivers = filterByName(sortedDriverUsers);
-  const filteredAdminsSorted = [...filteredAdmins].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-  const filteredDriversSorted = [...filteredDrivers].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  const filteredAdmins = filterUsers(adminUsers, 'admin');
+  const filteredDrivers = filterUsers(driverUsers, 'driver');
 
   // Enhanced outside click handler
   useEffect(() => {
@@ -137,7 +147,6 @@ const Resignated = () => {
       ) {
         setSearchActive(false);
         setSearchTerm("");
-        setSearchCategory("");
       }
     }
     if (searchActive) {
@@ -165,21 +174,88 @@ const Resignated = () => {
   };
 
   // Sort handler
-  const handleSort = (field, isAdmin) => {
-    if (isAdmin) {
-      handleAdminSort(field);
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortAsc((asc) => !asc);
     } else {
-      handleDriverSort(field);
+      setSortField(field);
+      setSortAsc(true);
     }
   };
 
   // Get sort icon
-  const getSortIcon = (field, isAdmin) => {
-    const currentField = isAdmin ? adminSortField : driverSortField;
-    const isAsc = isAdmin ? adminSortAsc : driverSortAsc;
-    
-    if (field !== currentField) return '';
-    return isAsc ? 'sort-asc' : 'sort-desc';
+  const getSortIcon = (field) => {
+    if (field !== sortField) return '';
+    return sortAsc ? 'sort-asc' : 'sort-desc';
+  };
+
+  // Unified sorted groups (match IT grouping and comparator)
+  const getSortValue = (u) => {
+    switch (sortField) {
+      case 'role': return (u.role || '').toString();
+      case 'userId': return (u.userId || '').toString();
+      case 'name': return (u.name || '').toString();
+      case 'email': return (u.email || '').toString();
+      case 'status': return 'removed';
+      default: return (u.userId || '').toString();
+    }
+  };
+
+  const sortGroup = (arr) => [...arr].sort((a, b) => {
+    const av = getSortValue(a);
+    const bv = getSortValue(b);
+    return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
+  });
+
+  const sortedAdminsGroup = sortGroup(filteredAdmins);
+  const sortedDriversGroup = sortGroup(filteredDrivers);
+
+  const renderRemovedRows = () => {
+    const rows = [];
+    let addedAdmin = false;
+    if (sortedAdminsGroup.length > 0) {
+      // Spacer heading for Admins at the top of the table
+      rows.push(
+        <tr key={`spacer-admins`} className="spacer-row">
+          <td className="spacer-label">Admins</td>
+          <td colSpan={4} style={{ padding: 0, height: '28px', border: 'none' }}></td>
+        </tr>
+      );
+      sortedAdminsGroup.forEach((user) => {
+        rows.push(
+          <tr key={user.id} id={`user-row-${user.id}`}>
+            <td>{user.userId || '-'}</td>
+            <td>{user.name || '-'}</td>
+            <td>{user.email || '-'}</td>
+            <td><span style={{ textTransform: 'capitalize', fontWeight: 500 }}>{user.role || 'admin'}</span></td>
+            <td><span className="status-inactive">REMOVED</span></td>
+          </tr>
+        );
+      });
+      addedAdmin = true;
+    }
+    if (sortedDriversGroup.length > 0) {
+      if (addedAdmin) {
+        rows.push(
+          <tr key={`spacer-removed`} className="spacer-row">
+            <td className="spacer-label">Drivers</td>
+            <td colSpan={4} style={{ padding: 0, height: '28px', border: 'none' }}></td>
+          </tr>
+        );
+      }
+      sortedDriversGroup.forEach((user) => {
+        rows.push(
+          <tr key={user.id} id={`user-row-${user.id}`}>
+            <td>{user.userId || '-'}</td>
+            <td>{user.name || '-'}</td>
+            <td>{user.email || '-'}</td>
+            <td><span style={{ textTransform: 'capitalize', fontWeight: 500 }}>{user.role || 'driver'}</span></td>
+            <td><span className="status-inactive">REMOVED</span></td>
+          </tr>
+        );
+      });
+    }
+    return rows;
   };
 
   return (
@@ -238,7 +314,7 @@ const Resignated = () => {
             <span style={{ fontSize: '1em', marginRight: 3 }}>&larr;</span> <span style={{ fontSize: '0.95em' }}>Back</span>
           </button>
 
-          {/* Filters */}
+          {/* Filters (IT-like) */}
           <div className="filter-card">
             <div className="filter-grid">
               <div className="filter-input">
@@ -246,60 +322,53 @@ const Resignated = () => {
                   <circle cx="11" cy="11" r="8"></circle>
                   <path d="m21 21-4.35-4.35"></path>
                 </svg>
-                <input 
-                  type="text" 
-                  placeholder="SEARCH USERS..." 
+                <input
+                  type="text"
+                  placeholder="Search by name, email, or ID..."
                   className="search-field"
                   value={searchTerm}
-                  onChange={(e) => {
-                    if (searchCategory) {
-                      setSearchTerm(e.target.value);
-                      setSearchActive(true);
-                    }
-                  }}
-                  onFocus={() => searchCategory && setSearchActive(true)}
-                  disabled={!searchCategory}
-                  ref={searchInputRef}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
 
               <div className="filter-select">
-                <select className="select-field select-blue" value={searchCategory} onChange={(e) => setSearchCategory(e.target.value)}>
-                  <option value="">SEARCH IN: ALL</option>
-                  <option value="admins">SEARCH IN: ADMINS</option>
-                  <option value="drivers">SEARCH IN: DRIVERS</option>
+                <select 
+                  className="select-field select-indigo"
+                  value={searchRole}
+                  onChange={(e) => setSearchRole(e.target.value)}
+                >
+                  <option value="">All Roles</option>
+                  <option value="admin">Admin</option>
+                  <option value="driver">Driver</option>
                 </select>
               </div>
 
               <div className="filter-select">
-                <select className="select-field select-indigo">
-                  <option value="all">ROLE: ALL</option>
-                  <option value="admin">ROLE: ADMIN</option>
-                  <option value="driver">ROLE: DRIVER</option>
-                </select>
-              </div>
-
-              <div className="filter-select">
-                <select className="select-field select-sky">
-                  <option value="all">STATUS: ALL</option>
-                  <option value="removed">STATUS: REMOVED</option>
+                <select 
+                  className="select-field select-sky"
+                  value={searchStatus}
+                  onChange={(e) => setSearchStatus(e.target.value)}
+                >
+                  <option value="removed">Removed</option>
                 </select>
               </div>
             </div>
 
             <div className="filter-summary">
               <div className="active-filters">
-                <span>◄ FILTERS ACTIVE ►</span>
+                <span>Active Filters:</span>
                 <div id="filterBadges">
-                  {searchTerm && <span className="filter-badge">SEARCH: {searchTerm}</span>}
-                  {searchCategory && <span className="filter-badge">CATEGORY: {searchCategory.toUpperCase()}</span>}
+                  {searchTerm && <span className="filter-badge">Search: {searchTerm}</span>}
+                  {searchRole && <span className="filter-badge">Role: {searchRole}</span>}
+                  {searchStatus && <span className="filter-badge">Status: {searchStatus}</span>}
                 </div>
               </div>
               <button 
                 className="clear-button"
                 onClick={() => {
                   setSearchTerm("");
-                  setSearchCategory("");
+                  setSearchRole("");
+                  setSearchStatus("removed");
                 }}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -307,254 +376,38 @@ const Resignated = () => {
                   <line x1="15" y1="9" x2="9" y2="15"></line>
                   <line x1="9" y1="9" x2="15" y2="15"></line>
                 </svg>
-                CLEAR ALL
+                Clear All
               </button>
             </div>
           </div>
-
-          {searchActive && searchTerm && searchCategory && (
-            <div ref={searchResultsRef} style={{ marginBottom: '2em', display: 'flex', justifyContent: 'center' }}>
-              {searchCategory === 'admins' && (
-                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div style={{
-                    width: '100%',
-                    maxWidth: 800,
-                    background: '#1c6954', // highlight color
-                    color: '#fff', // white text
-                    borderRadius: '8px',
-                    padding: '0.3em 0',
-                    marginBottom: 6,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    fontWeight: 700,
-                    fontSize: '1.05em',
-                    letterSpacing: '0.5px',
-                    border: 'none',
-                    boxShadow: 'none',
-                  }}>
-                    <span style={{ textAlign: 'center', width: '100%' }}>Admins</span>
-                  </div>
-                  <ul style={{ listStyle: 'none', padding: 0, minHeight: 32, width: '100%', maxWidth: 800 }}>
-                    {filteredAdminsSorted.length === 0 ? (
-                      <li style={{ color: '#888', fontStyle: 'italic' }}>No matching admins found.</li>
-                    ) : (
-                      filteredAdminsSorted.map(user => (
-                        <li
-                          key={user.id}
-                          style={{
-                            padding: '4px 0',
-                            borderBottom: '1px solid #eee',
-                            display: 'flex',
-                            width: '100%',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            fontSize: '0.6rem', // was 0.7rem
-                            cursor: 'pointer',
-                            transition: 'background 0.2s',
-                          }}
-                          onClick={() => handleResultClick(user.userId, 'admin')}
-                          title={`Go to ${user.name} in table`}
-                        >
-                          <span style={{ fontWeight: 500, textAlign: 'left', flex: 1 }}>{user.name}</span>
-                          <span style={{ color: '#888', fontSize: '0.7rem', textAlign: 'right', flex: 1 }}>{user.userId || '-'}</span>
-                        </li>
-                      ))
-                    )}
-                  </ul>
-                </div>
-              )}
-              {searchCategory === 'drivers' && (
-                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div style={{
-                    width: '100%',
-                    maxWidth: 800,
-                    background: '#1c6954', // highlight color
-                    color: '#fff', // white text
-                    borderRadius: '8px',
-                    padding: '0.3em 0',
-                    marginBottom: 6,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    fontWeight: 700,
-                    fontSize: '1.05em',
-                    letterSpacing: '0.5px',
-                    border: 'none',
-                    boxShadow: 'none',
-                  }}>
-                    <span style={{ textAlign: 'center', width: '100%' }}>Drivers</span>
-                  </div>
-                  <ul style={{ listStyle: 'none', padding: 0, minHeight: 32, width: '100%', maxWidth: 800 }}>
-                    {filteredDriversSorted.length === 0 ? (
-                      <li style={{ color: '#888', fontStyle: 'italic' }}>No matching drivers found.</li>
-                    ) : (
-                      filteredDriversSorted.map(user => (
-                        <li
-                          key={user.id}
-                          style={{
-                            padding: '4px 0',
-                            borderBottom: '1px solid #eee',
-                            display: 'flex',
-                            width: '100%',
-                            alignItems: 'center',
-                            fontSize: '0.6rem', // was 0.7rem
-                            cursor: 'pointer',
-                            transition: 'background 0.2s',
-                            justifyContent: 'space-between',
-                          }}
-                          onClick={() => handleResultClick(user.userId, 'driver')}
-                          title={`Go to ${user.name} in table`}
-                        >
-                          <span style={{ fontWeight: 500, textAlign: 'left', flex: 1, fontSize: '0.7rem' }}>{user.name}</span>
-                          <span style={{ color: '#888', fontSize: '0.7rem', textAlign: 'right', flex: 1 }}>{user.userId || '-'}</span>
-                        </li>
-                      ))
-                    )}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
           <div className="table-container">
             <div className="table-wrapper">
-              <h2 className="section-title">Removed Admins</h2>
-              <table className="excel-table">
+              <table className="excel-table" style={{ width: '100%' }}>
                 <thead>
                   <tr>
-                    <th 
-                      className={getSortIcon('userId', true)} 
-                      onClick={() => handleSort('userId', true)}
-                    >
-                      User ID
-                    </th>
-                    <th 
-                      className={getSortIcon('name', true)}
-                      onClick={() => handleSort('name', true)}
-                    >
-                      Name
-                    </th>
-                    <th 
-                      className={getSortIcon('email', true)}
-                      onClick={() => handleSort('email', true)}
-                    >
-                      Email
-                    </th>
-                    <th 
-                      className={getSortIcon('joinedAt', true)}
-                      onClick={() => handleSort('joinedAt', true)}
-                    >
-                      Joined
-                    </th>
-                    <th 
-                      className={getSortIcon('removedAt', true)}
-                      onClick={() => handleSort('removedAt', true)}
-                    >
-                      Removed
-                    </th>
+                    <th className={getSortIcon('userId')} onClick={() => handleSort('userId')}>ID</th>
+                    <th className={getSortIcon('name')} onClick={() => handleSort('name')}>USER NAME</th>
+                    <th className={getSortIcon('email')} onClick={() => handleSort('email')}>EMAIL</th>
+                    <th className={getSortIcon('role')} onClick={() => handleSort('role')}>ROLE</th>
+                    <th className={getSortIcon('status')} onClick={() => handleSort('status')}>STATUS</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedAdminUsers.map((admin) => (
-                    <tr 
-                      key={admin.id} 
-                      id={`admin-row-${admin.id}`} 
-                      className={highlightedRowId === `admin-row-${admin.id}` ? 'highlighted' : ''}
-                    >
-                      <td>{admin.userId}</td>
-                      <td>
-                        <div className="user-info">
-                          <span className="user-name">{admin.name}</span>
-                        </div>
+                  {sortedAdminsGroup.length + sortedDriversGroup.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#93c5fd' }}>
+                        No removed users found.
                       </td>
-                      <td>{admin.email || '-'}</td>
-                      <td>{formatDate(admin.joinedAt)}</td>
-                      <td>{formatDate(admin.removedAt)}</td>
                     </tr>
-                  ))}
+                  ) : (
+                    renderRemovedRows()
+                  )}
                 </tbody>
               </table>
-              {sortedAdminUsers.length === 0 && (
-                <div className="no-results">
-                  <p>No removed admins found</p>
-                </div>
-              )}
+              <div className="table-footer">
+                <span>Showing: {sortedAdminsGroup.length + sortedDriversGroup.length} removed users | Total Admins: {filteredAdmins.length} | Total Drivers: {filteredDrivers.length}</span>
+              </div>
             </div>
-          </div>
-
-          <div className="table-container" style={{ marginTop: '2rem' }}>
-            <div className="table-wrapper">
-              <h2 className="section-title">Removed Drivers</h2>
-              <table className="excel-table">
-                <thead>
-                  <tr>
-                    <th 
-                      className={getSortIcon('userId', false)} 
-                      onClick={() => handleSort('userId', false)}
-                    >
-                      User ID
-                    </th>
-                    <th 
-                      className={getSortIcon('name', false)}
-                      onClick={() => handleSort('name', false)}
-                    >
-                      Name
-                    </th>
-                    <th 
-                      className={getSortIcon('email', false)}
-                      onClick={() => handleSort('email', false)}
-                    >
-                      Email
-                    </th>
-                    <th 
-                      className={getSortIcon('joinedAt', false)}
-                      onClick={() => handleSort('joinedAt', false)}
-                    >
-                      Joined
-                    </th>
-                    <th 
-                      className={getSortIcon('removedAt', false)}
-                      onClick={() => handleSort('removedAt', false)}
-                    >
-                      Removed
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedDriverUsers.map((driver) => (
-                    <tr 
-                      key={driver.id} 
-                      id={`driver-row-${driver.id}`} 
-                      className={highlightedRowId === `driver-row-${driver.id}` ? 'highlighted' : ''}
-                    >
-                      <td>{driver.userId}</td>
-                      <td>
-                        <div className="user-info">
-                          <span className="user-name">{driver.name}</span>
-                        </div>
-                      </td>
-                      <td>{driver.email || '-'}</td>
-                      <td>{formatDate(driver.joinedAt)}</td>
-                      <td>{formatDate(driver.removedAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {sortedDriverUsers.length === 0 && (
-                <div className="no-results">
-                  <p>No removed drivers found</p>
-                </div>
-              )}
-            </div>
-          </div>
-          <div style={{ fontSize: '0.8em', marginTop: '0.5em', color: '#ffffff', textAlign: 'left' }}>
-            Total Removed Admins: {sortedAdminUsers.length}
-          </div>
-          <div style={{ fontSize: '0.8em', marginTop: '0.5em', color: '#ffffff', textAlign: 'left' }}>
-            Total Removed Drivers: {sortedDriverUsers.length}
-          </div>
-          <div style={{ fontSize: '0.9em', marginTop: '1em', color: '#000000', textAlign: 'right', fontWeight: 700 }}>
-            Total Removed Users: {sortedAdminUsers.length + sortedDriverUsers.length}
           </div>
         </div>
       </div>

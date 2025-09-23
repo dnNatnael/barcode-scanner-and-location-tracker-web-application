@@ -363,37 +363,38 @@ const IT = () => {
   const filteredAdmins = filterUsers(sortedAdminUsers, "admin");
   const filteredDrivers = filterUsers(sortedDriverUsers, "driver");
 
-  // Combine all filtered results
+  // Combine all filtered results (keep group order: pending -> admin -> driver)
   const allFilteredUsers = [...filteredPendingUsers, ...filteredAdmins, ...filteredDrivers];
 
-  // Sorting logic applied to combined filtered list
-  const sortedAllFilteredUsers = [...allFilteredUsers].sort((a, b) => {
-    // Normalize values based on field
-    const field = sortField;
-    let aVal;
-    let bVal;
-    if (field === 'status') {
-      const statusStr = (u) => (u.approved === true ? 'approved' : (u.approved !== true && u.approved !== false ? 'pending' : 'pending'));
-      aVal = statusStr(a);
-      bVal = statusStr(b);
-    } else if (field === 'role') {
-      aVal = (a.role || '').toString();
-      bVal = (b.role || '').toString();
-    } else if (field === 'userId') {
-      aVal = (a.userId || '').toString();
-      bVal = (b.userId || '').toString();
-    } else if (field === 'name') {
-      aVal = (a.name || '').toString();
-      bVal = (b.name || '').toString();
-    } else if (field === 'email') {
-      aVal = (a.email || '').toString();
-      bVal = (b.email || '').toString();
-    } else {
-      aVal = (a.userId || '').toString();
-      bVal = (b.userId || '').toString();
+  // Define common sort accessor based on current sortField
+  const getSortValue = (u) => {
+    switch (sortField) {
+      case 'status':
+        return (u.approved === true ? 'approved' : (u.approved !== true && u.approved !== false ? 'pending' : 'pending'));
+      case 'role':
+        return (u.role || '').toString();
+      case 'userId':
+        return (u.userId || '').toString();
+      case 'name':
+        return (u.name || '').toString();
+      case 'email':
+        return (u.email || '').toString();
+      default:
+        return (u.userId || '').toString();
     }
+  };
+
+  const sortGroup = (arr) => [...arr].sort((a, b) => {
+    const aVal = getSortValue(a);
+    const bVal = getSortValue(b);
     return sortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
   });
+
+  const sortedAllFilteredUsers = [
+    ...sortGroup(filteredPendingUsers),
+    ...sortGroup(filteredAdmins),
+    ...sortGroup(filteredDrivers)
+  ];
 
   // Sort controls
   const handleSort = (field) => {
@@ -415,6 +416,111 @@ const IT = () => {
   const activeUsers = totalUsers;
   const pendingCount = pendingUsers.length;
   const systemLoad = totalUsers > 0 ? Math.round((activeUsers / (totalUsers + pendingCount)) * 100) : 0;
+
+  // Render rows with spacer between sections (pending -> admin -> driver)
+  const renderUserRows = () => {
+    const rows = [];
+    let lastType = null;
+
+    sortedAllFilteredUsers.forEach((user) => {
+      const isPending = user.approved !== true && user.approved !== false;
+      const isAdmin = user.role === "admin" && user.approved === true;
+      const isDriver = user.role === "driver" && user.approved === true;
+      const type = isPending ? 'pending' : (isAdmin ? 'admin' : 'driver');
+
+      if (lastType && lastType !== type) {
+        const nextLabel = type === 'admin' ? 'Admins' : 'Drivers';
+        rows.push(
+          <tr key={`spacer-${rows.length}`} className="spacer-row">
+            <td className="spacer-label">{nextLabel}</td>
+            <td colSpan={5} style={{ padding: 0, height: '12px', border: 'none' }}></td>
+          </tr>
+        );
+      }
+
+      rows.push(
+        <tr key={user.id} id={`user-row-${user.id}`}>
+          <td>{user.userId || "-"}</td>
+          <td>{user.name || "-"}</td>
+          <td>{user.email || "-"}</td>
+          <td>
+            {isPending ? (
+              user.role && user.role !== 'role' ? (
+                <span style={{ textTransform: 'capitalize', fontWeight: 500 }}>
+                  {user.role}
+                </span>
+              ) : (
+                <div className="paste-button">
+                  <button className="button">
+                    {pendingRoles[user.id] ? `${pendingRoles[user.id].charAt(0).toUpperCase() + pendingRoles[user.id].slice(1)} ▼` : 'Role ▼'}
+                  </button>
+                  <div className="dropdown-content">
+                    <a id="top" href="#" onClick={(e) => { e.preventDefault(); handlePendingRoleChange(user.id, 'admin'); }}>Admin</a>
+                    <a id="middle" href="#" onClick={(e) => { e.preventDefault(); handlePendingRoleChange(user.id, 'driver'); }}>Driver</a>
+                  </div>
+                </div>
+              )
+            ) : (
+              <span style={{ textTransform: 'capitalize', fontWeight: 500 }}>
+                {user.role || (isAdmin ? "admin" : "driver")}
+              </span>
+            )}
+          </td>
+          <td>
+            {isPending ? (
+              <span className="status-pending">PENDING</span>
+            ) : (
+              <span className="status-active">APPROVED</span>
+            )}
+          </td>
+          <td>
+            <div className="action-buttons">
+              {isPending ? (
+                <>
+                  <button
+                    className="btn"
+                    onClick={() => handleApprovePending(user.id)}
+                    disabled={!pendingRoles[user.id]}
+                  >
+                    <span>APPROVE</span>
+                    <div className="ripple-container">
+                      <span></span><span></span><span></span><span></span><span></span>
+                      <span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                  </button>
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => handleReject(user.id)}
+                  >
+                    <span>REJECT</span>
+                    <div className="ripple-container">
+                      <span></span><span></span><span></span><span></span><span></span>
+                      <span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="btn btn-danger"
+                  onClick={() => handleRemove(user.id)}
+                >
+                  <span>REMOVE</span>
+                  <div className="ripple-container">
+                    <span></span><span></span><span></span><span></span><span></span>
+                    <span></span><span></span><span></span><span></span><span></span>
+                  </div>
+                </button>
+              )}
+            </div>
+          </td>
+        </tr>
+      );
+
+      lastType = type;
+    });
+
+    return rows;
+  };
 
   return (
     <div className="retro-wave-page">
@@ -511,6 +617,20 @@ const IT = () => {
             </div>
           </div>
 
+          {/* Top-right action button (outside table container) */}
+          <div className="table-top-actions" style={{ width: '100%' }}>
+            <button
+              className="btn btn-wide"
+              onClick={() => navigate('/resignated')}
+            >
+              <span>View Removed Users</span>
+              <div className="ripple-container">
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span>
+              </div>
+            </button>
+          </div>
+
           {/* Data Table */}
           <div style={{ width: '100%', maxWidth: '100%', margin: '0 auto', padding: '0 5px' }}>
             <div className="table-container">
@@ -534,114 +654,7 @@ const IT = () => {
                         </td>
                       </tr>
                     ) : (
-                      sortedAllFilteredUsers.map((user) => {
-                        // Determine user type for proper rendering
-                        const isPending = user.approved !== true && user.approved !== false;
-                        const isAdmin = user.role === "admin" && user.approved === true;
-                        const isDriver = user.role === "driver" && user.approved === true;
-
-                        return (
-                          <tr key={user.id} id={`user-row-${user.id}`}>
-                            <td>{user.userId || "-"}</td>
-                            <td>{user.name || "-"}</td>
-                            <td>{user.email || "-"}</td>
-                            <td>
-                              {isPending ? (
-                                user.role && user.role !== 'role' ? (
-                                  <span style={{ textTransform: 'capitalize', fontWeight: 500 }}>
-                                    {user.role}
-                                  </span>
-                                ) : (
-                                  <div className="paste-button">
-                                    <button className="button">
-                                      {pendingRoles[user.id] ? `${pendingRoles[user.id].charAt(0).toUpperCase() + pendingRoles[user.id].slice(1)} ▼` : 'Role ▼'}
-                                    </button>
-                                    <div className="dropdown-content">
-                                      <a id="top" href="#" onClick={(e) => { e.preventDefault(); handlePendingRoleChange(user.id, 'admin'); }}>Admin</a>
-                                      <a id="middle" href="#" onClick={(e) => { e.preventDefault(); handlePendingRoleChange(user.id, 'driver'); }}>Driver</a>
-                                    </div>
-                                  </div>
-                                )
-                              ) : (
-                                <span style={{ textTransform: 'capitalize', fontWeight: 500 }}>
-                                  {user.role || (isAdmin ? "admin" : "driver")}
-                                </span>
-                              )}
-                            </td>
-                            <td>
-                              {isPending ? (
-                                <span className="status-pending">PENDING</span>
-                              ) : (
-                                <span className="status-active">APPROVED</span>
-                              )}
-                            </td>
-                            <td>
-                              <div className="action-buttons">
-                                {isPending ? (
-                                  <>
-                                    <button
-                                      className="btn"
-                                      onClick={() => handleApprovePending(user.id)}
-                                      disabled={!pendingRoles[user.id]}
-                                    >
-                                      <span>APPROVE</span>
-                                      <div className="ripple-container">
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                      </div>
-                                    </button>
-                                    <button
-                                      className="btn btn-danger"
-                                      onClick={() => handleReject(user.id)}
-                                    >
-                                      <span>REJECT</span>
-                                      <div className="ripple-container">
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                      </div>
-                                    </button>
-                                  </>
-                                ) : (
-                                  <button
-                                    className="btn btn-danger"
-                                    onClick={() => handleRemove(user.id)}
-                                  >
-                                    <span>REMOVE</span>
-                                    <div className="ripple-container">
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                      <span></span>
-                                    </div>
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
+                      renderUserRows()
                     )}
                   </tbody>
                 </table>
@@ -654,27 +667,7 @@ const IT = () => {
 
 
           
-          {/* View Removed Users Button */}
-          <div style={{ textAlign: 'center', marginTop: '30px', padding: '20px', borderTop: '2px solid #374151' }}>
-            <button
-              className="btn"
-              onClick={() => navigate('/resignated')}
-            >
-              <span>View Removed Users</span>
-              <div className="ripple-container">
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-            </button>
-          </div>
+          
           
 
         </div>

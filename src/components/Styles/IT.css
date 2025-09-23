@@ -9,7 +9,7 @@
 .retro-wave-page {
     font-family: 'Courier New', monospace;
     min-height: 100vh;
-    background: linear-gradient(to bottom, #1e3a8a, #312e81, #1e3a8a);
+    background: #3D74B6; /* Solid blue background to match other pages */
     position: relative;
     overflow-x: hidden;
     display: flex;
@@ -34,59 +34,12 @@
 
 /* Retro Grid Background - Only for IT and Resignated pages */
 .retro-wave-page .grid-background {
-    position: absolute;
-    inset: 0;
-    opacity: 0.2;
-    background-image: 
-        linear-gradient(rgba(0, 150, 255, 0.3) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 150, 255, 0.3) 1px, transparent 1px),
-        linear-gradient(rgba(0, 255, 255, 0.2) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 255, 255, 0.2) 1px, transparent 1px);
-    background-size: 80px 80px, 80px 80px, 20px 20px, 20px 20px;
+    display: none; /* Disable retro grid overlay */
 }
 
 /* Geometric Shapes - Only for IT and Resignated pages */
-.retro-wave-page .shape {
-    position: absolute;
-    opacity: 0.3;
-    z-index: 1;
-}
-
-.retro-wave-page .shape-1 {
-    top: 80px;
-    left: 80px;
-    width: 128px;
-    height: 128px;
-    border: 2px solid #60a5fa;
-    transform: rotate(45deg);
-}
-
-.retro-wave-page .shape-2 {
-    bottom: 128px;
-    right: 128px;
-    width: 96px;
-    height: 96px;
-    border: 2px solid #22d3ee;
-    border-radius: 50%;
-    opacity: 0.4;
-}
-
-.retro-wave-page .shape-3 {
-    top: 50%;
-    right: 80px;
-    width: 64px;
-    height: 64px;
-    background-color: #60a5fa;
-    transform: rotate(45deg);
-}
-
-.retro-wave-page .shape-4 {
-    bottom: 80px;
-    left: 25%;
-    width: 80px;
-    height: 80px;
-    border: 2px solid #0ea5e9;
-}
+.retro-wave-page .shape { display: none; }
+.retro-wave-page .shape-1, .retro-wave-page .shape-2, .retro-wave-page .shape-3, .retro-wave-page .shape-4 { display: none; }
 
 /* Content - Only for IT and Resignated pages */
 .retro-wave-page .content {
@@ -98,7 +51,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 32px;
+    gap: 16px; /* reduced vertical gap between sections */
 }
 
 /* Header Card - Only for IT and Resignated pages */
@@ -413,7 +366,7 @@
 .retro-wave-page .action-buttons {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: flex-start; /* align buttons to the left */
     gap: 8px;
     opacity: 1; /* visible by default */
     transition: opacity 0.2s;
@@ -422,6 +375,46 @@
 
 .retro-wave-page .table-row:hover .action-buttons {
     opacity: 1; /* keep hover behavior for smoothness */
+}
+
+.retro-wave-page .spacer-row td {
+    background: #9ca3af; /* dark grey */
+    height: 28px;
+    border: none;
+    padding: 0;
+    transition: none;
+}
+
+.retro-wave-page .spacer-row .spacer-label {
+    padding-left: 12px;
+    font-weight: 700;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Prevent hover color change on spacer rows overriding ExcelTable.css */
+.excel-table tr.spacer-row:hover td {
+    background: #9ca3af !important;
+}
+/* Also neutralize row-level hover background rules */
+.excel-table tbody tr.spacer-row:hover {
+    background-color: #9ca3af !important;
+}
+/* Guard against zebra striping overriding spacer background */
+.excel-table tr.spacer-row td {
+    background: #9ca3af !important;
+}
+
+/* Disable hover/interaction entirely on spacer rows */
+.excel-table tr.spacer-row,
+.excel-table tr.spacer-row td {
+    pointer-events: none;
+}
+
+/* Allow pointer events on label cell if needed for accessibility */
+.excel-table tr.spacer-row .spacer-label {
+    pointer-events: auto;
 }
 
 .retro-wave-page .action-btn {
@@ -644,77 +637,74 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 10000;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(2px);
 }
 
 .retro-wave-page .modal-content {
-    background: rgba(0, 0, 0, 0.9);
-    backdrop-filter: blur(8px);
-    padding: 2rem;
-    border-radius: 8px;
+    background: #ffffff;
+    padding: 1.5rem;
+    border-radius: 10px;
     border: 2px solid #3b82f6;
-    max-width: 400px;
-    width: 90%;
-    text-align: center;
-    color: #93c5fd;
+    max-width: 480px;
+    width: 92%;
+    text-align: left;
+    color: #1f2937; /* slate-800 for body text */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
 }
 
 .retro-wave-page .modal-title {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #60a5fa;
-    margin-bottom: 1rem;
-    letter-spacing: 0.1em;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e3a8a; /* project blue */
+    margin-bottom: 0.25rem;
 }
 
 .retro-wave-page .modal-message {
-    font-size: 1rem;
-    color: #93c5fd;
-    margin-bottom: 1.5rem;
-    line-height: 1.5;
-    letter-spacing: 0.05em;
+    font-size: 0.95rem;
+    color: #334155; /* slate-700 */
+    margin-bottom: 1.25rem;
+    line-height: 1.6;
 }
 
 .retro-wave-page .modal-buttons {
     display: flex;
-    justify-content: center;
-    gap: 1rem;
+    justify-content: flex-end;
+    gap: 0.75rem;
 }
 
 .retro-wave-page .modal-btn {
-    padding: 0.5rem 1.5rem;
-    border: none;
-    border-radius: 4px;
+    padding: 0.55rem 1rem;
+    border-radius: 6px;
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
-    letter-spacing: 0.1em;
+    transition: all 0.2s ease;
+    letter-spacing: 0.02em;
 }
 
 .retro-wave-page .modal-btn-cancel {
-    background: rgba(0, 0, 0, 0.3);
-    color: #67e8f9;
-    border: 1px solid #22d3ee;
+    background: #ffffff;
+    color: #1e3a8a;
+    border: 2px solid #3b82f6;
 }
 
 .retro-wave-page .modal-btn-cancel:hover {
-    background: rgba(55, 65, 81, 0.3);
+    background: #eff6ff; /* light blue */
 }
 
 .retro-wave-page .modal-btn-confirm {
-    background: linear-gradient(to right, #ef4444, #dc2626);
-    color: white;
-    border: 1px solid #ef4444;
+    background: #dc2626; /* red */
+    color: #ffffff;
+    border: 2px solid #b91c1c;
 }
 
 .retro-wave-page .modal-btn-confirm:hover {
-    background: linear-gradient(to right, #dc2626, #b91c1c);
+    background: #b91c1c;
 }
 
 /* Success Message Styles - Only for IT and Resignated pages */
@@ -722,18 +712,15 @@
     position: fixed;
     top: 20px;
     right: 20px;
-    background: rgba(0, 0, 0, 0.9);
-    backdrop-filter: blur(8px);
-    color: #22c55e;
-    padding: 1rem 1.5rem;
+    background-color: #28a745; /* match Signup/Login success */
+    color: #ffffff; /* white text */
+    padding: 0.5rem 1.5rem; /* same as Login.css */
     border-radius: 8px;
-    border: 2px solid #22c55e;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     font-weight: 600;
     font-size: 0.9rem;
     z-index: 10001;
     animation: slideIn 0.3s ease-out;
-    letter-spacing: 0.1em;
 }
 
 @keyframes slideIn {
@@ -959,6 +946,15 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+/* Top-right actions above the table */
+.table-top-actions {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 4px 8px 8px 8px; /* reduced vertical padding */
+}
+
 .table-footer {
   background: #f8f9fa;
   padding: 16px;
@@ -1007,6 +1003,11 @@
 
 .btn:hover {
   background-color: hsl(218, 68%, 47%);
+}
+
+/* Wider variant for increased horizontal visibility */
+.btn.btn-wide {
+  width: 12em; /* was 9em */
 }
 
 /* Danger variant for destructive actions */
@@ -1247,25 +1248,25 @@
 }
 
 .button {
-    background: rgba(0, 0, 0, 0.3);
-    color: #93c5fd;
+    background: #3b82f6; /* blue */
+    color: #ffffff; /* white text */
     padding: 6px 12px;
     font-size: 12px;
     font-weight: 600;
-    border: 1px solid #3b82f6;
+    border: 1px solid #2563eb; /* darker blue border */
     border-radius: 4px 4px 0 0;
     cursor: pointer;
     width: 100%;
     box-sizing: border-box;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     letter-spacing: 0.05em;
     position: relative;
 }
 
 .button:hover {
-    background: rgba(59, 130, 246, 0.2);
-    border-color: #60a5fa;
-    color: #60a5fa;
+    background: #2563eb; /* darker blue on hover */
+    border-color: #1d4ed8;
+    color: #ffffff; /* keep white text */
 }
 
 .dropdown-content {
