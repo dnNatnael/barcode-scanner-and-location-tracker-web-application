@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/barcode-scanner-and-location-tracker-web-application/static/css/main.7e7398c8.css",
+    "main.js": "/barcode-scanner-and-location-tracker-web-application/static/js/main.7d4ea88e.js",
+    "static/js/453.861f82b9.chunk.js": "/barcode-scanner-and-location-tracker-web-application/static/js/453.861f82b9.chunk.js",
+    "static/media/icl-logo-form.png": "/barcode-scanner-and-location-tracker-web-application/static/media/icl-logo-form.3699a049c4b596634eff.png",
+    "index.html": "/barcode-scanner-and-location-tracker-web-application/index.html",
+    "main.7e7398c8.css.map": "/barcode-scanner-and-location-tracker-web-application/static/css/main.7e7398c8.css.map",
+    "main.7d4ea88e.js.map": "/barcode-scanner-and-location-tracker-web-application/static/js/main.7d4ea88e.js.map",
+    "453.861f82b9.chunk.js.map": "/barcode-scanner-and-location-tracker-web-application/static/js/453.861f82b9.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.7e7398c8.css",
+    "static/js/main.7d4ea88e.js"
+  ]
+}
